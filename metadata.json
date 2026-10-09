@@ -1,0 +1,6 @@
+{
+  "name": "Will You Go On A Date With Me? 💕",
+  "description": "An interactive, playful date proposal web app featuring evasive buttons, funny cat reaction GIFs, and a multi-step date curation questionnaire.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

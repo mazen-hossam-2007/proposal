@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #fdf8f5;
+    color: #381e26;
+    overflow-x: hidden;
+  }
+}
+
+.font-handwriting {
+  font-family: 'Caveat', cursive;
+}
+
+.font-serif-romantic {
+  font-family: 'Playfair Display', serif;
+}
+
+@keyframes float-heart {
+  0% {
+    transform: translateY(0) scale(0.8) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.6;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-120vh) scale(1.2) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes dramatic-zoom {
+  0% {
+    transform: scale(0.6) rotate(-5deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(2deg);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.98) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes head-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px) rotate(-2deg); }
+  40%, 80% { transform: translateX(8px) rotate(2deg); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-dramatic-zoom {
+  animation: dramatic-zoom 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-head-shake {
+  animation: head-shake 0.4s ease-in-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
