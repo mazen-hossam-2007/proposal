@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { DateProposalState } from './types';
 import { ProposalStep } from './components/ProposalStep';
 import { DateTimeStep } from './components/DateTimeStep';
@@ -133,6 +134,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-[#fef8f6] via-[#fdf2f4] to-[#fcecee] text-[#381e26] selection:bg-rose-200 selection:text-rose-900 flex flex-col justify-between overflow-x-hidden">
+      <Analytics />
       {/* Floating Animated Hearts */}
       <FloatingHearts />
 
