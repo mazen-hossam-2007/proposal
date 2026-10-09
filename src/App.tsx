@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { DateProposalState } from './types';
 import { ProposalStep } from './components/ProposalStep';
 import { DateTimeStep } from './components/DateTimeStep';
@@ -213,6 +214,9 @@ export default function App() {
           💕
         </span>
       </footer>
+
+      {/* Vercel Web Analytics */}
+      <Analytics />
     </div>
   );
 }
