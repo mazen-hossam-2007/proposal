@@ -74,6 +74,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 📍 Destination: ${record.locations.join(', ') || 'None'}
 🍽️ Food Choices: ${record.foodCravings.join(', ') || 'None'}
 💌 Personal Note: "${record.specialNote || 'None'}"
+🙈 Rejection Attempts: ${record.rejectionAttempts || 0} times
 ⏰ Submitted: ${new Date(record.submittedAt).toLocaleString()}`;
 
     navigator.clipboard.writeText(formatted);
@@ -189,6 +190,18 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 
             {/* Grid of Choices */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Rejection Attempts */}
+              <div className="bg-white p-3.5 rounded-xl border border-rose-100 shadow-2xs sm:col-span-2">
+                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1 mb-1">
+                  <span>😼 Rejection / Dodge Attempts</span>
+                </p>
+                <p className="text-sm font-bold text-stone-900">
+                  {latest.rejectionAttempts > 0 
+                    ? `Tried to say No ${latest.rejectionAttempts} ${latest.rejectionAttempts === 1 ? 'time' : 'times'} before surrendering! 😂` 
+                    : '0 times — Said YES on the very first try! 🥰'}
+                </p>
+              </div>
+
               {/* Date */}
               <div className="bg-white p-3.5 rounded-xl border border-rose-100 shadow-2xs">
                 <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1 mb-1">

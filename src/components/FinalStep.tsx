@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Heart, Copy, Check, Share2, MessageCircle, Calendar, MapPin, Utensils, RotateCcw } from 'lucide-react';
+import { Heart, Copy, Check, Share2, MessageCircle, Calendar, MapPin, Utensils, RotateCcw, ShieldAlert, Sparkles } from 'lucide-react';
 import { DateProposalState } from '../types';
 import { sound } from '../utils/sound';
 
@@ -44,6 +44,7 @@ export const FinalStep: React.FC<FinalStepProps> = ({ state, onReset }) => {
   const formattedTime = state.customTime || state.timeSlot || 'Evening';
   const placesList = state.locations.join(', ') || 'Surprise spot';
   const foodList = state.foodCravings.join(', ') || 'Delicious food';
+  const rejections = state.rejectionAttempts || 0;
 
   // Format the romantic summary message
   const shareMessage = 
@@ -54,6 +55,7 @@ Here are my choices for our date:
 ⏰ Time: ${formattedTime}
 📍 Place: ${placesList}
 🍽️ Food: ${foodList}${state.specialNote ? `\n💌 Special Note from Jana: "${state.specialNote}"` : ''}
+${rejections > 0 ? `🙈 P.S. I tried to reject you ${rejections} ${rejections === 1 ? 'time' : 'times'} but the button ran away! 😂` : '🥰 P.S. I said YES immediately on the first click!'}
 
 Can't wait to see you, Mazen! 🥰✨`;
 
@@ -96,9 +98,22 @@ Can't wait to see you, Mazen! 🥰✨`;
         <h1 className="text-3xl sm:text-4xl font-serif-romantic font-extrabold text-rose-950 mb-1">
           IT&apos;S AN OFFICIAL DATE WITH JANA! ❤️
         </h1>
-        <p className="font-handwriting text-2xl text-rose-600">
+        <p className="font-handwriting text-2xl text-rose-600 mb-3">
           Best decision of the year, Jana! Here is our cute itinerary:
         </p>
+
+        {/* Rejection Attempts Callout Banner */}
+        {rejections > 0 ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm font-bold shadow-xs">
+            <span className="text-base">😼</span>
+            <span>Jana tried to reject / avoid saying Yes <strong>{rejections} {rejections === 1 ? 'time' : 'times'}</strong> before giving up! 😂</span>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-rose-500" />
+            <span>Jana said YES on the very first try with zero hesitation! 🥰</span>
+          </div>
+        )}
       </div>
 
       {/* Romantic Golden Love Ticket Card */}
@@ -122,12 +137,30 @@ Can't wait to see you, Mazen! 🥰✨`;
 
         {/* Details Grid */}
         <div className="space-y-4">
+          {/* Rejection Attempts Line inside ticket */}
+          <div className="flex items-start gap-3.5">
+            <div className="p-2.5 rounded-2xl bg-rose-100/70 text-rose-600 border border-rose-200">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Rejections / Dodges</p>
+              <p className="text-base font-bold text-stone-900">
+                {rejections > 0 
+                  ? `${rejections} ${rejections === 1 ? 'Attempt' : 'Attempts'} (Resistance was futile! 😼)` 
+                  : '0 Attempts (Immediate YES! 🥰)'}
+              </p>
+              <p className="text-xs text-rose-600 font-semibold">
+                {rejections > 0 ? 'The staring cat won in the end!' : 'Zero hesitation, true love!'}
+              </p>
+            </div>
+          </div>
+
           <div className="flex items-start gap-3.5">
             <div className="p-2.5 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Date & Time</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Date &amp; Time</p>
               <p className="text-base font-bold text-stone-900">{state.date || 'TBD'}</p>
               <p className="text-xs text-rose-600 font-semibold">{formattedTime}</p>
             </div>
@@ -148,7 +181,7 @@ Can't wait to see you, Mazen! 🥰✨`;
               <Utensils className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Food & Treats</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Food &amp; Treats</p>
               <p className="text-base font-bold text-stone-900">{foodList}</p>
             </div>
           </div>

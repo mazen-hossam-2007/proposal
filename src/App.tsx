@@ -25,6 +25,7 @@ export default function App() {
 
   const [proposalState, setProposalState] = useState<DateProposalState>({
     hasSaidYes: false,
+    rejectionAttempts: 0,
     date: '',
     timeSlot: '',
     customTime: '',
@@ -72,8 +73,12 @@ export default function App() {
     sound.enabled = !nextState;
   };
 
-  const handleAcceptProposal = () => {
-    setProposalState((prev) => ({ ...prev, hasSaidYes: true }));
+  const handleAcceptProposal = (rejections: number) => {
+    setProposalState((prev) => ({
+      ...prev,
+      hasSaidYes: true,
+      rejectionAttempts: rejections,
+    }));
     setCurrentStep(1);
   };
 
@@ -121,6 +126,7 @@ export default function App() {
   const handleReset = () => {
     setProposalState({
       hasSaidYes: false,
+      rejectionAttempts: 0,
       date: '',
       timeSlot: '',
       customTime: '',

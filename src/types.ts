@@ -1,5 +1,6 @@
 export interface DateProposalState {
   hasSaidYes: boolean;
+  rejectionAttempts: number;
   date: string;
   timeSlot: string;
   customTime: string;

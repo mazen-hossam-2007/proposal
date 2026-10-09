@@ -3,7 +3,7 @@ import { Sparkles, Heart, Volume2, VolumeX, Eye } from 'lucide-react';
 import { sound } from '../utils/sound';
 
 interface ProposalStepProps {
-  onAccept: () => void;
+  onAccept: (rejections: number) => void;
   isMuted: boolean;
   toggleMute: () => void;
 }
@@ -129,7 +129,7 @@ export const ProposalStep: React.FC<ProposalStepProps> = ({ onAccept, isMuted, t
           <button
             onClick={() => {
               sound.playCelebration();
-              onAccept();
+              onAccept(noAttempts);
             }}
             style={{ transform: `scale(${yesScale})` }}
             className="relative z-10 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white font-bold text-lg sm:text-xl shadow-lg shadow-rose-500/35 hover:shadow-rose-500/50 hover:brightness-105 active:scale-95 transition-all duration-200 flex items-center gap-2 cursor-pointer"
