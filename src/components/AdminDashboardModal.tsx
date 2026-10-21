@@ -3,7 +3,8 @@ import {
   X, Lock, Calendar, Clock, MapPin, Utensils, MessageSquare, 
   RefreshCw, Check, Copy, Heart, Sparkles, AlertCircle, Download,
   Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Phone,
-  FileText, ShieldAlert, Trash2, Edit3, ExternalLink, User
+  FileText, ShieldAlert, Trash2, Edit3, ExternalLink, User,
+  Plus, ClipboardPaste
 } from 'lucide-react';
 import { DateSubmissionRecord, AdminStats, ProposalStatus } from '../types';
 import { sound } from '../utils/sound';
@@ -49,7 +50,43 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   const [contactPhoneInput, setContactPhoneInput] = useState('');
   const [isExportingCsv, setIsExportingCsv] = useState(false);
 
-  // Fetch Submissions from Secure Backend API
+  // Manual / WhatsApp Ticket Import Modal state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importPastedText, setImportPastedText] = useState('');
+  const [importPartnerName, setImportPartnerName] = useState('Jana');
+  const [importDate, setImportDate] = useState('');
+  const [importTime, setImportTime] = useState('');
+  const [importLocations, setImportLocations] = useState('Zamalek 🌳✨');
+  const [importFood, setImportFood] = useState('Italian Cuisine 🍕🍝');
+  const [importNote, setImportNote] = useState('');
+  const [importRejections, setImportRejections] = useState(0);
+  const [isSavingImport, setIsSavingImport] = useState(false);
+
+  // Parse pasted ticket from WhatsApp or text
+  const handleParsePastedText = (text: string) => {
+    setImportPastedText(text);
+    if (!text.trim()) return;
+
+    const dateMatch = text.match(/Date:\s*([^\n\r]+)/i);
+    if (dateMatch && dateMatch[1]) setImportDate(dateMatch[1].trim());
+
+    const timeMatch = text.match(/Time:\s*([^\n\r]+)/i);
+    if (timeMatch && timeMatch[1]) setImportTime(timeMatch[1].trim());
+
+    const placeMatch = text.match(/Place:\s*([^\n\r]+)/i);
+    if (placeMatch && placeMatch[1]) setImportLocations(placeMatch[1].trim());
+
+    const foodMatch = text.match(/Food:\s*([^\n\r]+)/i);
+    if (foodMatch && foodMatch[1]) setImportFood(foodMatch[1].trim());
+
+    const noteMatch = text.match(/(?:Special Note from Jana|Note):\s*["“]?([^"”\n\r]+)["”]?/i);
+    if (noteMatch && noteMatch[1]) setImportNote(noteMatch[1].trim());
+
+    const rejectMatch = text.match(/reject you (\d+)/i);
+    if (rejectMatch && rejectMatch[1]) setImportRejections(parseInt(rejectMatch[1], 10));
+  };
+
+  // Fetch Submissions from Secure Backend API (with local storage fallback & auto-sync)
   const fetchSubmissions = useCallback(async () => {
     if (!adminToken) return;
     setIsLoading(true);
@@ -71,26 +108,80 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
       });
 
       if (res.status === 401) {
-        onClose();
-        return;
-      }
-
-      if (!res.ok) {
-        throw new Error('Failed to retrieve submissions.');
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setSubmissions(data.submissions || []);
-        setTotalPages(data.totalPages || 1);
-        setTotalCount(data.totalCount || 0);
-        if (data.stats) {
-          setStats(data.stats);
+        // If not a local session token, close
+        if (!adminToken.startsWith('local_session_')) {
+          onClose();
+          return;
         }
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Network error while fetching submissions';
-      setErrorBanner(msg);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          let list: DateSubmissionRecord[] = data.submissions || [];
+
+          // Also check if this device has any local un-synced submissions and sync them
+          try {
+            const raw = localStorage.getItem(ADMIN_CONFIG.storageKey);
+            if (raw) {
+              const localList: DateSubmissionRecord[] = JSON.parse(raw);
+              if (Array.isArray(localList)) {
+                for (const localItem of localList) {
+                  if (localItem && !list.some((s) => s.id === localItem.id || (s.date === localItem.date && s.customTime === localItem.customTime && s.specialNote === localItem.specialNote))) {
+                    fetch('/api/submissions', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(localItem),
+                    }).catch(() => {});
+                    list = [localItem, ...list];
+                  }
+                }
+              }
+            }
+          } catch {
+            // ignore
+          }
+
+          setSubmissions(list);
+          setTotalPages(data.totalPages || 1);
+          setTotalCount(data.totalCount || list.length);
+          if (data.stats) {
+            setStats(data.stats);
+          }
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      throw new Error('Server unreachable');
+    } catch {
+      // Offline fallback: load from local storage so proposals are visible
+      try {
+        const raw = localStorage.getItem(ADMIN_CONFIG.storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const list: DateSubmissionRecord[] = Array.isArray(parsed) ? parsed : [parsed];
+          setSubmissions(list);
+          setTotalCount(list.length);
+          setTotalPages(Math.max(1, Math.ceil(list.length / itemsPerPage)));
+          setStats({
+            totalAccepted: list.length,
+            statusCounts: {
+              Confirmed: list.filter((r) => (r.status || 'Confirmed') === 'Confirmed').length,
+              Planning: list.filter((r) => r.status === 'Planning').length,
+              Completed: list.filter((r) => r.status === 'Completed').length,
+              Archived: list.filter((r) => r.status === 'Archived').length,
+            },
+            totalRejectionsPrevented: list.reduce((sum, r) => sum + (r.rejectionAttempts || 0), 0),
+            latestSubmission: list[0]?.submittedAt || null,
+          });
+          setErrorBanner('Syncing with server... Displaying local backup records from this device.');
+        } else {
+          setErrorBanner('Could not reach backend server. If Jana accepted on her phone, use "+ Add / Paste Ticket" or open #admin on her phone to sync.');
+        }
+      } catch {
+        setErrorBanner('Could not retrieve submissions.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -215,7 +306,56 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     }
   };
 
-  // Export to CSV
+  // Save Manual / Imported Proposal
+  const handleSaveManualProposal = async () => {
+    setIsSavingImport(true);
+    try {
+      const record: DateSubmissionRecord = {
+        id: `prop_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        partnerName: importPartnerName.trim() || 'Jana',
+        status: 'Confirmed',
+        hasSaidYes: true,
+        rejectionAttempts: Number(importRejections) || 0,
+        date: importDate.trim() || '2025-02-14',
+        timeSlot: importTime.trim() || 'Evening',
+        customTime: importTime.trim(),
+        locations: importLocations ? importLocations.split(',').map((s) => s.trim()) : ['Zamalek 🌳✨'],
+        foodCravings: importFood ? importFood.split(',').map((s) => s.trim()) : ['Italian Cuisine 🍕🍝'],
+        specialNote: importNote.trim(),
+        submittedAt: new Date().toISOString(),
+      };
+
+      // 1. Post to server
+      try {
+        await fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(record),
+        });
+      } catch {
+        // offline fallback
+      }
+
+      // 2. Save to local storage
+      try {
+        const raw = localStorage.getItem(ADMIN_CONFIG.storageKey);
+        const list = raw ? JSON.parse(raw) : [];
+        list.unshift(record);
+        localStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify(list));
+      } catch {
+        // ignore
+      }
+
+      sound.playCelebration();
+      setIsImportModalOpen(false);
+      setImportPastedText('');
+      fetchSubmissions();
+    } finally {
+      setIsSavingImport(false);
+    }
+  };
+
+  // Export to CSV (with server and client fallback)
   const handleExportCsv = async () => {
     setIsExportingCsv(true);
     try {
@@ -236,12 +376,47 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
         link.click();
         link.remove();
         window.URL.revokeObjectURL(downloadUrl);
+        setIsExportingCsv(false);
+        return;
       }
     } catch {
-      alert('Failed to export CSV. Please try again.');
-    } finally {
-      setIsExportingCsv(false);
+      // client-side fallback below
     }
+
+    // Client-side CSV export fallback
+    if (submissions.length > 0) {
+      sound.playCelebration();
+      const headers = ['ID','Partner Name','Status','Submission Timestamp','Proposed Date','Time Slot','Custom Time','Destinations','Food Cravings','Personal Notes','Rejection Dodges Avoided','Contact Phone','Admin Notes'];
+      const escapeCsv = (val: unknown) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+      const rows = submissions.map((r) => [
+        escapeCsv(r.id),
+        escapeCsv(r.partnerName || 'Jana'),
+        escapeCsv(r.status || 'Confirmed'),
+        escapeCsv(r.submittedAt),
+        escapeCsv(r.date || 'TBD'),
+        escapeCsv(r.timeSlot || ''),
+        escapeCsv(r.customTime || ''),
+        escapeCsv((r.locations || []).join(', ')),
+        escapeCsv((r.foodCravings || []).join(', ')),
+        escapeCsv(r.specialNote || ''),
+        escapeCsv(r.rejectionAttempts || 0),
+        escapeCsv(r.contactPhone || ''),
+        escapeCsv(r.internalAdminNotes || '')
+      ].join(','));
+      const csv = [headers.join(','), ...rows].join('\n') + '\n';
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `jana-date-proposals-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } else {
+      alert('No proposal records available to export.');
+    }
+    setIsExportingCsv(false);
   };
 
   // Copy Single Ticket Text
@@ -339,6 +514,19 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Paste / Add Ticket Button */}
+            <button
+              onClick={() => {
+                sound.playPop();
+                setIsImportModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+              title="Add proposal or paste ticket sent on WhatsApp"
+            >
+              <Plus className="w-3.5 h-3.5 text-rose-600" />
+              <span>Paste / Add Ticket</span>
+            </button>
+
             {/* Export CSV Button */}
             <button
               onClick={handleExportCsv}
@@ -906,6 +1094,155 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
                     Done
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Manual / WhatsApp Ticket Import Sub-modal */}
+        {isImportModalOpen && (
+          <div 
+            className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs animate-fadeIn"
+            onClick={() => setIsImportModalOpen(false)}
+          >
+            <div 
+              className="relative max-w-lg w-full bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border-2 border-rose-300 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-rose-100">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-rose-100 text-rose-600">
+                    <ClipboardPaste className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-serif-romantic font-bold text-rose-950">
+                      Import or Add Date Proposal
+                    </h3>
+                    <p className="text-[11px] text-stone-500">
+                      Paste WhatsApp message or enter proposal choices manually
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Quick Paste Field */}
+              <div className="mb-4">
+                <label className="text-xs font-bold text-rose-900 block mb-1">
+                  Paste WhatsApp Message (Auto-Detects Choices):
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder={`Paste message here, e.g.:\nHey Mazen! I said YES!\n📅 Date: 2025-02-14\n⏰ Time: 7:30 PM\n📍 Place: Zamalek...`}
+                  value={importPastedText}
+                  onChange={(e) => handleParsePastedText(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-stone-50 font-mono"
+                />
+              </div>
+
+              {/* Form Fields */}
+              <div className="space-y-3 mb-5">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-stone-600 block mb-0.5">Partner Name:</label>
+                    <input
+                      type="text"
+                      value={importPartnerName}
+                      onChange={(e) => setImportPartnerName(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-800 bg-white"
+                      placeholder="Jana"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-stone-600 block mb-0.5">Rejections Avoided:</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={importRejections}
+                      onChange={(e) => setImportRejections(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-800 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-bold text-stone-600 block mb-0.5">Chosen Date:</label>
+                    <input
+                      type="text"
+                      value={importDate}
+                      onChange={(e) => setImportDate(e.target.value)}
+                      placeholder="e.g. 2025-02-14 or Friday"
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-800 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-stone-600 block mb-0.5">Chosen Time:</label>
+                    <input
+                      type="text"
+                      value={importTime}
+                      onChange={(e) => setImportTime(e.target.value)}
+                      placeholder="e.g. 7:30 PM or Evening"
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-800 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-stone-600 block mb-0.5">Places / Destinations:</label>
+                  <input
+                    type="text"
+                    value={importLocations}
+                    onChange={(e) => setImportLocations(e.target.value)}
+                    placeholder="e.g. Zamalek, Maadi"
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-800 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-stone-600 block mb-0.5">Food & Cravings:</label>
+                  <input
+                    type="text"
+                    value={importFood}
+                    onChange={(e) => setImportFood(e.target.value)}
+                    placeholder="e.g. Italian Cuisine, Cheesecake"
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-800 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-stone-600 block mb-0.5">Special Note from Jana:</label>
+                  <textarea
+                    rows={2}
+                    value={importNote}
+                    onChange={(e) => setImportNote(e.target.value)}
+                    placeholder="e.g. Let's take cute pictures! 🥰"
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-800 bg-white resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-rose-100">
+                <button
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-3 py-1.5 rounded-xl text-xs text-stone-500 hover:bg-stone-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveManualProposal}
+                  disabled={isSavingImport}
+                  className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{isSavingImport ? 'Saving...' : 'Save to Dashboard'}</span>
+                </button>
               </div>
             </div>
           </div>

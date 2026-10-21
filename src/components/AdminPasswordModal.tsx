@@ -59,11 +59,25 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
         setTimeout(() => setIsShaking(false), 500);
       }
     } catch {
-      sound.playDramaticStare();
-      setErrorMessage('Connection error. Could not verify password with server.');
-      setIsShaking(true);
-      setIsLoading(false);
-      setTimeout(() => setIsShaking(false), 500);
+      // Network/Server offline fallback: Check against fallback password so boyfriend is never locked out
+      if (password.trim() === ADMIN_CONFIG.fallbackPassword) {
+        sound.playCelebration();
+        const fallbackToken = `local_session_${Date.now()}`;
+        try {
+          localStorage.setItem(ADMIN_CONFIG.tokenStorageKey, fallbackToken);
+        } catch {
+          // Ignore storage quota
+        }
+        setPassword('');
+        setIsLoading(false);
+        onSuccess(fallbackToken);
+      } else {
+        sound.playDramaticStare();
+        setErrorMessage("Wrong password, you're not the boyfriend! 😜");
+        setIsShaking(true);
+        setIsLoading(false);
+        setTimeout(() => setIsShaking(false), 500);
+      }
     }
   };
 

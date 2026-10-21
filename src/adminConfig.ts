@@ -11,4 +11,7 @@ export const ADMIN_CONFIG = {
   // Secret URL triggers
   secretHash: "#admin",
   secretQueryParam: "admin",
+
+  // Master secret fallback password (ensures boyfriend is never locked out during network/offline errors)
+  fallbackPassword: "love123",
 };

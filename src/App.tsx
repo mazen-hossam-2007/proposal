@@ -86,6 +86,39 @@ export default function App() {
     }
   };
 
+  // Background-sync any unsynced offline records from localStorage to the server
+  useEffect(() => {
+    const syncLocalRecords = async () => {
+      try {
+        const raw = localStorage.getItem(ADMIN_CONFIG.storageKey);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const list = Array.isArray(parsed) ? parsed : [parsed];
+        for (const item of list) {
+          if (item && !item._synced) {
+            try {
+              const res = await fetch('/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item),
+              });
+              if (res.ok) {
+                item._synced = true;
+              }
+            } catch {
+              // will retry next time
+            }
+          }
+        }
+        localStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify(list));
+      } catch {
+        // ignore
+      }
+    };
+
+    syncLocalRecords();
+  }, []);
+
   const toggleMute = () => {
     const nextState = !isMuted;
     setIsMuted(nextState);
@@ -105,7 +138,9 @@ export default function App() {
   const handleLockInDate = async () => {
     const record = {
       ...proposalState,
-      id: Date.now().toString(),
+      partnerName: 'Jana',
+      status: 'Confirmed',
+      id: `prop_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       submittedAt: new Date().toISOString(),
     };
 

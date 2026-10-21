@@ -1,4 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { createServer as createViteServer } from 'vite';
 import fs from 'fs';
 import path from 'path';
@@ -9,6 +10,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Full CORS support for cross-device & mobile browser access
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 app.use(express.json({ limit: '5mb' }));
 
 const DATA_DIR = path.resolve(__dirname, 'data');
@@ -500,7 +513,7 @@ app.get('/api/submissions', requireAdminAuth, (_req: Request, res: Response) => 
 // Setup Vite & Static Assets
 // ---------------------------------------------------------------------------
 const isProd = process.env.NODE_ENV === 'production';
-const PORT = 3000;
+const PORT = isProd && process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 async function startServer() {
   if (!isProd) {

@@ -1,5 +1,24 @@
 [
   {
+    "id": "prop_1792617920133_fvq2x",
+    "partnerName": "Jana",
+    "contactPhone": "",
+    "hasSaidYes": true,
+    "rejectionAttempts": 3,
+    "date": "2025-02-14",
+    "timeSlot": "Evening",
+    "customTime": "8:00 PM",
+    "locations": [
+      "Zamalek 🌳✨"
+    ],
+    "foodCravings": [
+      "Italian Cuisine 🍕🍝"
+    ],
+    "specialNote": "So excited!",
+    "status": "Confirmed",
+    "submittedAt": "2026-10-21T21:25:20.133Z"
+  },
+  {
     "id": "prop_1792616463197_d4a6v",
     "partnerName": "Jana",
     "contactPhone": "+201234567890",
