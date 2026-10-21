@@ -14,12 +14,14 @@ interface AdminDashboardModalProps {
   isOpen: boolean;
   onClose: () => void;
   adminToken: string;
+  onLogout?: () => void;
 }
 
 export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   isOpen,
   onClose,
   adminToken,
+  onLogout,
 }) => {
   const [submissions, setSubmissions] = useState<DateSubmissionRecord[]>([]);
   const [stats, setStats] = useState<AdminStats>({
@@ -108,11 +110,18 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
       });
 
       if (res.status === 401) {
-        // If not a local session token, close
-        if (!adminToken.startsWith('local_session_')) {
-          onClose();
-          return;
+        // Token was rejected: clear stale token and redirect to unlock modal
+        try {
+          localStorage.removeItem(ADMIN_CONFIG.tokenStorageKey);
+        } catch {
+          // ignore
         }
+        if (onLogout) {
+          onLogout();
+        } else {
+          onClose();
+        }
+        return;
       }
 
       if (res.ok) {
@@ -148,6 +157,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
           if (data.stats) {
             setStats(data.stats);
           }
+          setErrorBanner(null);
           setIsLoading(false);
           return;
         }
@@ -175,9 +185,9 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
             totalRejectionsPrevented: list.reduce((sum, r) => sum + (r.rejectionAttempts || 0), 0),
             latestSubmission: list[0]?.submittedAt || null,
           });
-          setErrorBanner('Syncing with server... Displaying local backup records from this device.');
+          setErrorBanner('Displaying local backup records from this device.');
         } else {
-          setErrorBanner('Could not reach backend server. If Jana accepted on her phone, use "+ Add / Paste Ticket" or open #admin on her phone to sync.');
+          setErrorBanner('Could not sync with live server. Please tap Refresh or check connection.');
         }
       } catch {
         setErrorBanner('Could not retrieve submissions.');
@@ -185,7 +195,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [adminToken, searchQuery, statusFilter, sortBy, currentPage, onClose]);
+  }, [adminToken, searchQuery, statusFilter, sortBy, currentPage, onClose, onLogout]);
 
   useEffect(() => {
     if (isOpen && adminToken) {
@@ -560,10 +570,14 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
                 } catch {
                   // ignore
                 }
-                onClose();
+                if (onLogout) {
+                  onLogout();
+                } else {
+                  onClose();
+                }
               }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all active:scale-95 cursor-pointer"
-              title="Lock dashboard & clear session"
+              title="Lock dashboard & log out"
             >
               <Lock className="w-3.5 h-3.5 text-rose-500" />
               <span>Lock</span>

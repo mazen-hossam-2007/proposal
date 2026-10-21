@@ -164,11 +164,25 @@ export default function App() {
 
     // 2. Save persistently online via server API
     try {
-      await fetch('/api/submissions', {
+      const res = await fetch('/api/submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(record),
       });
+      if (res.ok) {
+        try {
+          const stored = localStorage.getItem(ADMIN_CONFIG.storageKey);
+          if (stored) {
+            const list = JSON.parse(stored);
+            if (Array.isArray(list) && list[0]) {
+              list[0]._synced = true;
+              localStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify(list));
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
     } catch {
       // offline fallback
     }
@@ -262,6 +276,11 @@ export default function App() {
         isOpen={isAdminDashboardOpen}
         adminToken={adminToken}
         onClose={() => setIsAdminDashboardOpen(false)}
+        onLogout={() => {
+          setAdminToken('');
+          setIsAdminDashboardOpen(false);
+          setIsPasswordModalOpen(true);
+        }}
       />
 
       {/* Delicate Footer with Secret Trigger on the Heart */}
