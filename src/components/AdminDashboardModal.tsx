@@ -9,6 +9,14 @@ import {
 import { DateSubmissionRecord, AdminStats, ProposalStatus } from '../types';
 import { sound } from '../utils/sound';
 import { ADMIN_CONFIG } from '../adminConfig';
+import {
+  fetchProposals,
+  saveProposalToCloud,
+  updateProposalInCloud,
+  deleteProposalFromCloud,
+  subscribeToLiveProposals,
+  CloudSyncResult,
+} from '../services/cloudSync';
 
 interface AdminDashboardModalProps {
   isOpen: boolean;
@@ -88,120 +96,107 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     if (rejectMatch && rejectMatch[1]) setImportRejections(parseInt(rejectMatch[1], 10));
   };
 
-  // Fetch Submissions from Secure Backend API (with local storage fallback & auto-sync)
+  // Fetch Submissions from Cloud Relay and Consolidated Sources
+  const [rawList, setRawList] = useState<DateSubmissionRecord[]>([]);
+  const [isCloudLive, setIsCloudLive] = useState(true);
+
+  const applyFiltersAndPagination = useCallback(
+    (allRecords: DateSubmissionRecord[]) => {
+      let filtered = [...allRecords];
+
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(
+          (r) =>
+            (r.partnerName && r.partnerName.toLowerCase().includes(query)) ||
+            (r.date && r.date.toLowerCase().includes(query)) ||
+            (r.specialNote && r.specialNote.toLowerCase().includes(query)) ||
+            (r.locations && r.locations.some((loc) => loc.toLowerCase().includes(query))) ||
+            (r.foodCravings && r.foodCravings.some((f) => f.toLowerCase().includes(query))) ||
+            (r.internalAdminNotes && r.internalAdminNotes.toLowerCase().includes(query))
+        );
+      }
+
+      // Status filter
+      if (statusFilter && statusFilter !== 'All') {
+        filtered = filtered.filter((r) => (r.status || 'Confirmed') === statusFilter);
+      }
+
+      // Sorting
+      filtered.sort((a, b) => {
+        if (sortBy === 'newest') {
+          return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
+        }
+        if (sortBy === 'oldest') {
+          return new Date(a.submittedAt || 0).getTime() - new Date(b.submittedAt || 0).getTime();
+        }
+        if (sortBy === 'rejections') {
+          return (b.rejectionAttempts || 0) - (a.rejectionAttempts || 0);
+        }
+        if (sortBy === 'date') {
+          return (a.date || '').localeCompare(b.date || '');
+        }
+        return 0;
+      });
+
+      setTotalCount(filtered.length);
+      const calculatedPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+      setTotalPages(calculatedPages);
+
+      // Slice for current page
+      const startIdx = (currentPage - 1) * itemsPerPage;
+      const paginated = filtered.slice(startIdx, startIdx + itemsPerPage);
+      setSubmissions(paginated);
+    },
+    [searchQuery, statusFilter, sortBy, currentPage, itemsPerPage]
+  );
+
   const fetchSubmissions = useCallback(async () => {
-    if (!adminToken) return;
     setIsLoading(true);
-    setErrorBanner(null);
-
     try {
-      const params = new URLSearchParams({
-        search: searchQuery,
-        status: statusFilter,
-        sort: sortBy,
-        page: String(currentPage),
-        limit: String(itemsPerPage),
-      });
-
-      const res = await fetch(`/api/admin/submissions?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
-      });
-
-      if (res.status === 401) {
-        // Token was rejected: clear stale token and redirect to unlock modal
-        try {
-          localStorage.removeItem(ADMIN_CONFIG.tokenStorageKey);
-        } catch {
-          // ignore
-        }
-        if (onLogout) {
-          onLogout();
-        } else {
-          onClose();
-        }
-        return;
-      }
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          let list: DateSubmissionRecord[] = data.submissions || [];
-
-          // Also check if this device has any local un-synced submissions and sync them
-          try {
-            const raw = localStorage.getItem(ADMIN_CONFIG.storageKey);
-            if (raw) {
-              const localList: DateSubmissionRecord[] = JSON.parse(raw);
-              if (Array.isArray(localList)) {
-                for (const localItem of localList) {
-                  if (localItem && !list.some((s) => s.id === localItem.id || (s.date === localItem.date && s.customTime === localItem.customTime && s.specialNote === localItem.specialNote))) {
-                    fetch('/api/submissions', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(localItem),
-                    }).catch(() => {});
-                    list = [localItem, ...list];
-                  }
-                }
-              }
-            }
-          } catch {
-            // ignore
-          }
-
-          setSubmissions(list);
-          setTotalPages(data.totalPages || 1);
-          setTotalCount(data.totalCount || list.length);
-          if (data.stats) {
-            setStats(data.stats);
-          }
-          setErrorBanner(null);
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      throw new Error('Server unreachable');
+      const result = await fetchProposals();
+      setRawList(result.submissions);
+      setStats(result.stats);
+      setIsCloudLive(result.isCloudConnected);
+      applyFiltersAndPagination(result.submissions);
+      setErrorBanner(null);
     } catch {
-      // Offline fallback: load from local storage so proposals are visible
+      // Local fallback
       try {
         const raw = localStorage.getItem(ADMIN_CONFIG.storageKey);
         if (raw) {
           const parsed = JSON.parse(raw);
           const list: DateSubmissionRecord[] = Array.isArray(parsed) ? parsed : [parsed];
-          setSubmissions(list);
-          setTotalCount(list.length);
-          setTotalPages(Math.max(1, Math.ceil(list.length / itemsPerPage)));
-          setStats({
-            totalAccepted: list.length,
-            statusCounts: {
-              Confirmed: list.filter((r) => (r.status || 'Confirmed') === 'Confirmed').length,
-              Planning: list.filter((r) => r.status === 'Planning').length,
-              Completed: list.filter((r) => r.status === 'Completed').length,
-              Archived: list.filter((r) => r.status === 'Archived').length,
-            },
-            totalRejectionsPrevented: list.reduce((sum, r) => sum + (r.rejectionAttempts || 0), 0),
-            latestSubmission: list[0]?.submittedAt || null,
-          });
-          setErrorBanner('Displaying local backup records from this device.');
-        } else {
-          setErrorBanner('Could not sync with live server. Please tap Refresh or check connection.');
+          setRawList(list);
+          applyFiltersAndPagination(list);
         }
       } catch {
-        setErrorBanner('Could not retrieve submissions.');
+        // ignore
       }
     } finally {
       setIsLoading(false);
     }
-  }, [adminToken, searchQuery, statusFilter, sortBy, currentPage, onClose, onLogout]);
+  }, [applyFiltersAndPagination]);
 
+  // Real-time live synchronization across devices
   useEffect(() => {
-    if (isOpen && adminToken) {
+    if (isOpen) {
       fetchSubmissions();
+
+      // Listen for instant SSE updates from Jana's device
+      const unsubscribe = subscribeToLiveProposals((result: CloudSyncResult) => {
+        setRawList(result.submissions);
+        setStats(result.stats);
+        setIsCloudLive(result.isCloudConnected);
+        applyFiltersAndPagination(result.submissions);
+      });
+
+      return () => {
+        unsubscribe();
+      };
     }
-  }, [isOpen, adminToken, fetchSubmissions]);
+  }, [isOpen, fetchSubmissions, applyFiltersAndPagination]);
 
   // Handle Search Input Change (resets to page 1)
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,30 +216,22 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     setCurrentPage(1);
   };
 
-  // Update Status on Record
+  // Re-apply filters whenever search, status, sort or rawList changes
+  useEffect(() => {
+    applyFiltersAndPagination(rawList);
+  }, [rawList, applyFiltersAndPagination]);
+
+  // Update Status on Record (persists to cloud for all devices)
   const handleUpdateRecordStatus = async (id: string, newStatus: ProposalStatus) => {
     setIsUpdatingStatus(true);
     try {
-      const res = await fetch(`/api/admin/submissions/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (res.ok) {
-        sound.playPop();
-        const data = await res.json();
-        // Update list in state
-        setSubmissions((prev) =>
-          prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
-        );
-        if (selectedRecord && selectedRecord.id === id) {
-          setSelectedRecord({ ...selectedRecord, status: newStatus });
-        }
-        fetchSubmissions();
+      sound.playPop();
+      await updateProposalInCloud(id, { status: newStatus });
+      setRawList((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+      );
+      if (selectedRecord && selectedRecord.id === id) {
+        setSelectedRecord({ ...selectedRecord, status: newStatus });
       }
     } catch {
       // Failed to update
@@ -258,31 +245,22 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     if (!selectedRecord) return;
     setIsUpdatingStatus(true);
     try {
-      const res = await fetch(`/api/admin/submissions/${selectedRecord.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify({
-          internalAdminNotes: adminNoteInput,
-          contactPhone: contactPhoneInput,
-        }),
+      sound.playPop();
+      await updateProposalInCloud(selectedRecord.id, {
+        internalAdminNotes: adminNoteInput,
+        contactPhone: contactPhoneInput,
       });
 
-      if (res.ok) {
-        sound.playPop();
-        const updated = {
-          ...selectedRecord,
-          internalAdminNotes: adminNoteInput,
-          contactPhone: contactPhoneInput,
-        };
-        setSelectedRecord(updated);
-        setSubmissions((prev) =>
-          prev.map((item) => (item.id === selectedRecord.id ? updated : item))
-        );
-        setEditingAdminNote(false);
-      }
+      const updated = {
+        ...selectedRecord,
+        internalAdminNotes: adminNoteInput,
+        contactPhone: contactPhoneInput,
+      };
+      setSelectedRecord(updated);
+      setRawList((prev) =>
+        prev.map((item) => (item.id === selectedRecord.id ? updated : item))
+      );
+      setEditingAdminNote(false);
     } catch {
       // ignore
     } finally {
@@ -290,27 +268,19 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     }
   };
 
-  // Delete Record
+  // Delete Record across all devices
   const handleDeleteRecord = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this proposal record? This cannot be undone.')) {
+    if (!window.confirm('Are you sure you want to delete this proposal record?')) {
       return;
     }
 
     try {
-      const res = await fetch(`/api/admin/submissions/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
-      });
-
-      if (res.ok) {
-        sound.playPop();
-        if (selectedRecord?.id === id) {
-          setSelectedRecord(null);
-        }
-        fetchSubmissions();
+      sound.playPop();
+      await deleteProposalFromCloud(id);
+      if (selectedRecord?.id === id) {
+        setSelectedRecord(null);
       }
+      setRawList((prev) => prev.filter((r) => r.id !== id));
     } catch {
       // ignore
     }
@@ -335,31 +305,13 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
         submittedAt: new Date().toISOString(),
       };
 
-      // 1. Post to server
-      try {
-        await fetch('/api/submissions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(record),
-        });
-      } catch {
-        // offline fallback
-      }
-
-      // 2. Save to local storage
-      try {
-        const raw = localStorage.getItem(ADMIN_CONFIG.storageKey);
-        const list = raw ? JSON.parse(raw) : [];
-        list.unshift(record);
-        localStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify(list));
-      } catch {
-        // ignore
-      }
-
+      await saveProposalToCloud(record);
       sound.playCelebration();
       setIsImportModalOpen(false);
       setImportPastedText('');
       fetchSubmissions();
+    } catch {
+      // ignore
     } finally {
       setIsSavingImport(false);
     }
@@ -513,8 +465,9 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
                 <h2 className="text-xl font-serif-romantic font-extrabold text-rose-950">
                   Admin Proposal Dashboard
                 </h2>
-                <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-bold uppercase tracking-wider">
-                  Secure Live
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold tracking-wider flex items-center gap-1.5 border border-emerald-300 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  LIVE CLOUD SYNC
                 </span>
               </div>
               <p className="text-xs text-stone-500">

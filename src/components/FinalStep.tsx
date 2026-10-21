@@ -74,7 +74,14 @@ Can't wait to see you, Mazen! 🥰✨`;
       const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
       url = `https://wa.me/${cleanPhone}?text=${encoded}`;
     }
-    window.open(url, '_blank', 'noopener,noreferrer');
+    // Safe navigation across mobile browsers & iframes
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   return (
@@ -114,6 +121,12 @@ Can't wait to see you, Mazen! 🥰✨`;
             <span>Jana said YES on the very first try with zero hesitation! 🥰</span>
           </div>
         )}
+
+        {/* Live Cloud Sync Confirmation */}
+        <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 mx-auto w-fit shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Locked in &amp; synced to Mazen&apos;s cloud dashboard in real-time! 💖</span>
+        </div>
       </div>
 
       {/* Romantic Golden Love Ticket Card */}

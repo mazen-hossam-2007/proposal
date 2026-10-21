@@ -10,6 +10,7 @@ import { AdminPasswordModal } from './components/AdminPasswordModal';
 import { AdminDashboardModal } from './components/AdminDashboardModal';
 import { ADMIN_CONFIG } from './adminConfig';
 import { sound } from './utils/sound';
+import { saveProposalToCloud, fetchProposals } from './services/cloudSync';
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -88,35 +89,8 @@ export default function App() {
 
   // Background-sync any unsynced offline records from localStorage to the server
   useEffect(() => {
-    const syncLocalRecords = async () => {
-      try {
-        const raw = localStorage.getItem(ADMIN_CONFIG.storageKey);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        const list = Array.isArray(parsed) ? parsed : [parsed];
-        for (const item of list) {
-          if (item && !item._synced) {
-            try {
-              const res = await fetch('/api/submissions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item),
-              });
-              if (res.ok) {
-                item._synced = true;
-              }
-            } catch {
-              // will retry next time
-            }
-          }
-        }
-        localStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify(list));
-      } catch {
-        // ignore
-      }
-    };
-
-    syncLocalRecords();
+    // Initial fetch to sync any offline or cloud records across devices
+    fetchProposals().catch(() => {});
   }, []);
 
   const toggleMute = () => {
@@ -139,53 +113,13 @@ export default function App() {
     const record = {
       ...proposalState,
       partnerName: 'Jana',
-      status: 'Confirmed',
+      status: 'Confirmed' as const,
       id: `prop_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       submittedAt: new Date().toISOString(),
     };
 
-    // 1. Save locally in localStorage as reliable backup
-    try {
-      const existing = localStorage.getItem(ADMIN_CONFIG.storageKey);
-      let list = [];
-      if (existing) {
-        try {
-          const parsed = JSON.parse(existing);
-          list = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          list = [];
-        }
-      }
-      list.unshift(record);
-      localStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify(list));
-    } catch {
-      // ignore
-    }
-
-    // 2. Save persistently online via server API
-    try {
-      const res = await fetch('/api/submissions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record),
-      });
-      if (res.ok) {
-        try {
-          const stored = localStorage.getItem(ADMIN_CONFIG.storageKey);
-          if (stored) {
-            const list = JSON.parse(stored);
-            if (Array.isArray(list) && list[0]) {
-              list[0]._synced = true;
-              localStorage.setItem(ADMIN_CONFIG.storageKey, JSON.stringify(list));
-            }
-          }
-        } catch {
-          // ignore
-        }
-      }
-    } catch {
-      // offline fallback
-    }
+    // Save directly to cloud relay & local backup so Mazen sees it instantly on any device
+    await saveProposalToCloud(record);
 
     // Proceed to celebration summary
     setCurrentStep(4);

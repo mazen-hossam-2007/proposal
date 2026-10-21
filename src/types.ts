@@ -35,6 +35,8 @@ export interface DateSubmissionRecord extends DateProposalState {
   partnerName?: string;
   contactPhone?: string;
   internalAdminNotes?: string;
+  updatedAt?: string;
+  _synced?: boolean;
 }
 
 export interface AdminStats {
