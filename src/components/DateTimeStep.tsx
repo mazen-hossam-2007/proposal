@@ -57,51 +57,51 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
   const isComplete = Boolean(date && (timeSlot || customTime));
 
   return (
-    <div className="relative z-10 max-w-xl w-full mx-auto p-4 sm:p-6 animate-fadeIn">
+    <div className="relative z-10 max-w-xl w-full mx-auto p-3 sm:p-6 animate-fadeIn select-none">
       {/* Celebration Header with Happy Cat Dancing GIF */}
-      <div className="text-center mb-8">
-        <div className="relative inline-block mx-auto mb-3">
-          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden shadow-xl border-3 border-rose-300 mx-auto bg-rose-50">
+      <div className="text-center mb-5 sm:mb-8">
+        <div className="relative inline-block mx-auto mb-2 sm:mb-3">
+          <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-3xl overflow-hidden shadow-xl border-3 border-rose-300 mx-auto bg-rose-50">
             <img
               src="/assets/happy-cat.gif"
               alt="Happy dancing cat jumping with joy"
               className="w-full h-full object-cover"
             />
           </div>
-          <span className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-md border border-rose-200 text-lg animate-bounce">
+          <span className="absolute -bottom-1.5 -right-1.5 bg-white rounded-full p-1 sm:p-1.5 shadow-md border border-rose-200 text-sm sm:text-lg animate-bounce">
             🎉
           </span>
         </div>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-bold uppercase mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-[10px] sm:text-xs font-bold uppercase mb-1.5 sm:mb-2">
+          <Sparkles className="w-3 h-3 text-rose-500" />
           <span>Step 1 of 3: Lock Down The Time • Jana &amp; Mazen</span>
         </div>
-        <h2 className="text-3xl sm:text-4xl font-serif-romantic font-bold text-rose-950 mb-1">
+        <h2 className="text-2xl sm:text-4xl font-serif-romantic font-bold text-rose-950 mb-1">
           When are you free, Jana? 🌸
         </h2>
-        <p className="text-sm text-stone-600">
+        <p className="text-xs sm:text-sm text-stone-600">
           Pick any day and vibe that fits your schedule best, Jana!
         </p>
       </div>
 
       {/* Date & Time Picker Card */}
-      <div className="bg-white/85 backdrop-blur-xl border border-rose-100 rounded-3xl p-6 sm:p-8 shadow-xl shadow-rose-200/40 space-y-6">
+      <div className="bg-white/90 backdrop-blur-xl border border-rose-100 rounded-3xl p-4 sm:p-8 shadow-xl shadow-rose-200/40 space-y-5 sm:space-y-6">
         
         {/* Date Selection */}
         <div>
-          <label className="flex items-center gap-2 text-sm font-bold text-stone-800 mb-2">
+          <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-stone-800 mb-2">
             <Calendar className="w-4 h-4 text-rose-500" />
             <span>Pick a Date:</span>
           </label>
           
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
             {QUICK_DATES.map((qd, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => setQuickDate(qd.daysFromNow)}
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all active:scale-95 cursor-pointer"
+                className="px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all active:scale-95 cursor-pointer touch-manipulation"
               >
                 {qd.label}
               </button>
@@ -116,18 +116,18 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
               sound.playPop();
               setDate(e.target.value);
             }}
-            className="w-full px-4 py-3 rounded-2xl border border-rose-200 bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-400 font-medium text-sm transition-all shadow-sm"
+            className="w-full px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-rose-200 bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-400 font-medium text-xs sm:text-sm transition-all shadow-sm"
           />
         </div>
 
         {/* Time Slot Selection */}
         <div>
-          <label className="flex items-center gap-2 text-sm font-bold text-stone-800 mb-3">
+          <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-stone-800 mb-2 sm:mb-3">
             <Clock className="w-4 h-4 text-rose-500" />
             <span>What time of day suits you?</span>
           </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3">
             {TIME_SLOTS.map((slot) => {
               const selected = timeSlot === slot.title;
               return (
@@ -139,19 +139,19 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                     setTimeSlot(slot.title);
                     setCustomTime('');
                   }}
-                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                  className={`p-2.5 sm:p-3.5 rounded-2xl border text-left transition-all cursor-pointer touch-manipulation ${
                     selected
-                      ? 'bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20 scale-[1.02]'
+                      ? 'bg-rose-500 text-white border-rose-600 shadow-md shadow-rose-500/20 scale-[1.01]'
                       : 'bg-white hover:bg-rose-50/60 border-rose-100 text-stone-700 hover:border-rose-200'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">{slot.icon}</span>
-                    <span className={`text-sm font-bold ${selected ? 'text-white' : 'text-stone-900'}`}>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-lg sm:text-xl">{slot.icon}</span>
+                    <span className={`text-xs sm:text-sm font-bold ${selected ? 'text-white' : 'text-stone-900'}`}>
                       {slot.title}
                     </span>
                   </div>
-                  <p className={`text-xs ${selected ? 'text-rose-100' : 'text-stone-500'}`}>
+                  <p className={`text-[11px] sm:text-xs ${selected ? 'text-rose-100' : 'text-stone-500'}`}>
                     {slot.desc}
                   </p>
                 </button>
@@ -160,7 +160,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
           </div>
 
           {/* Custom Time Option */}
-          <div className="pt-2">
+          <div className="pt-1">
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -170,7 +170,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                   setCustomTime(e.target.value);
                   setTimeSlot('');
                 }}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-rose-200 bg-white text-stone-800 placeholder-stone-400 text-xs focus:outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-rose-200 bg-white text-stone-800 placeholder-stone-400 text-xs focus:outline-none focus:ring-2 focus:ring-rose-400"
               />
             </div>
           </div>
@@ -185,17 +185,17 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
               sound.playPop();
               onNext();
             }}
-            className={`w-full py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all shadow-lg cursor-pointer ${
+            className={`w-full py-3.5 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-lg cursor-pointer touch-manipulation ${
               isComplete
                 ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-rose-500/25 hover:shadow-rose-500/40 hover:scale-[1.01] active:scale-95'
                 : 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none'
             }`}
           >
             <span>Next: Choose Where We Go</span>
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           {!isComplete && (
-            <p className="text-center text-xs text-stone-400 mt-2">
+            <p className="text-center text-[11px] sm:text-xs text-stone-400 mt-2">
               Pick a date and time slot to continue ✨
             </p>
           )}

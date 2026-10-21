@@ -1,11 +1,17 @@
 @import "tailwindcss";
 
 @layer base {
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     font-family: 'Plus Jakarta Sans', sans-serif;
     background-color: #fdf8f5;
     color: #381e26;
     overflow-x: hidden;
+    min-height: 100dvh;
   }
 }
 

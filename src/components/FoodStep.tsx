@@ -77,65 +77,65 @@ export const FoodStep: React.FC<FoodStepProps> = ({
   const hasSelection = selectedFood.length > 0;
 
   return (
-    <div className="relative z-10 max-w-2xl w-full mx-auto p-4 sm:p-6 animate-fadeIn">
+    <div className="relative z-10 max-w-2xl w-full mx-auto p-3 sm:p-6 animate-fadeIn select-none">
       {/* Header featuring the Cat Eating Chips GIF */}
-      <div className="text-center mb-6">
-        <div className="relative inline-block mx-auto mb-3">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden shadow-lg border-3 border-amber-300 mx-auto bg-amber-50">
+      <div className="text-center mb-4 sm:mb-6">
+        <div className="relative inline-block mx-auto mb-2 sm:mb-3">
+          <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-3xl overflow-hidden shadow-lg border-3 border-amber-300 mx-auto bg-amber-50">
             <img
               src="/assets/cat-eating-chips.gif"
               alt="Cat crunching and eating chips happily"
               className="w-full h-full object-cover scale-110"
             />
           </div>
-          <span className="absolute -bottom-2 -right-2 bg-white rounded-full p-1.5 shadow-md border border-amber-200 text-lg">
+          <span className="absolute -bottom-1.5 -right-1.5 bg-white rounded-full p-1 sm:p-1.5 shadow-md border border-amber-200 text-sm sm:text-lg">
             😋
           </span>
         </div>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-bold uppercase mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-[10px] sm:text-xs font-bold uppercase mb-1.5 sm:mb-2">
+          <Sparkles className="w-3 h-3 text-rose-500" />
           <span>Step 3 of 3: Food Cravings • Jana's Choice</span>
         </div>
-        <h2 className="text-3xl sm:text-4xl font-serif-romantic font-bold text-rose-950 mb-1">
+        <h2 className="text-2xl sm:text-4xl font-serif-romantic font-bold text-rose-950 mb-1">
           What are you craving, Jana? 🍽️
         </h2>
-        <p className="text-sm text-stone-600">
+        <p className="text-xs sm:text-sm text-stone-600">
           Pick everything your heart desires, Jana — my treat! 😋✨
         </p>
       </div>
 
       {/* Food Choices Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mb-4 sm:mb-6">
         {FOOD_OPTIONS.map((item) => {
           const isSelected = selectedFood.includes(item.title);
           return (
             <div
               key={item.id}
               onClick={() => toggleFood(item.title)}
-              className={`p-4 rounded-3xl border-2 transition-all cursor-pointer text-left select-none relative ${
+              className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl border-2 transition-all cursor-pointer text-left select-none relative touch-manipulation ${
                 isSelected
                   ? 'bg-rose-50 border-rose-500 shadow-md shadow-rose-200/50 scale-[1.01]'
-                  : 'bg-white/85 hover:bg-white border-rose-100/80 shadow-xs hover:border-rose-200'
+                  : 'bg-white/90 hover:bg-white border-rose-100/80 shadow-2xs hover:border-rose-200'
               }`}
             >
               <div
-                className={`absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
-                  isSelected ? 'bg-rose-500 text-white scale-105' : 'bg-stone-100 text-transparent'
+                className={`absolute top-3 right-3 sm:top-4 sm:right-4 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all ${
+                  isSelected ? 'bg-rose-500 text-white scale-105 shadow-xs' : 'bg-stone-100 text-transparent'
                 }`}
               >
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[3]" />
               </div>
 
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-2xl p-2 rounded-xl bg-white shadow-xs border border-rose-100">
+              <div className="flex items-center gap-2.5 sm:gap-3 mb-1.5">
+                <span className="text-xl sm:text-2xl p-1.5 sm:p-2 rounded-xl bg-white shadow-2xs border border-rose-100 shrink-0">
                   {item.emoji}
                 </span>
-                <h3 className="font-bold text-stone-900 text-base leading-snug">
+                <h3 className="font-bold text-stone-900 text-sm sm:text-base leading-snug pr-6 sm:pr-8">
                   {item.title}
                 </h3>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed pr-6">
+              <p className="text-[11px] sm:text-xs text-stone-600 leading-relaxed pr-2">
                 {item.description}
               </p>
             </div>
@@ -144,8 +144,8 @@ export const FoodStep: React.FC<FoodStepProps> = ({
       </div>
 
       {/* Special Craving Note Card */}
-      <div className="bg-white/85 backdrop-blur-xl border border-rose-100 rounded-3xl p-5 shadow-sm mb-6">
-        <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-700 mb-2">
+      <div className="bg-white/90 backdrop-blur-xl border border-rose-100 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-2xs mb-4 sm:mb-6">
+        <label className="flex items-center gap-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5">
           <Utensils className="w-3.5 h-3.5 text-rose-500" />
           <span>Any specific craving or favorite dessert for you, Jana?</span>
         </label>
@@ -154,21 +154,21 @@ export const FoodStep: React.FC<FoodStepProps> = ({
           value={specialNote}
           onChange={(e) => setSpecialNote(e.target.value)}
           placeholder="e.g. 'Jana wants pistachio gelato!' or 'A cute quiet cafe with a river view please'..."
-          className="w-full px-4 py-2.5 rounded-2xl border border-rose-200 bg-white text-stone-800 placeholder-stone-400 text-xs focus:outline-none focus:ring-2 focus:ring-rose-400 resize-none"
+          className="w-full px-3.5 py-2 rounded-xl sm:rounded-2xl border border-rose-200 bg-white text-stone-800 placeholder-stone-400 text-xs focus:outline-none focus:ring-2 focus:ring-rose-400 resize-none"
         />
       </div>
 
       {/* Navigation Buttons */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-2.5 sm:gap-4 pt-1">
         <button
           type="button"
           onClick={() => {
             sound.playPop();
             onBack();
           }}
-          className="px-5 py-3 rounded-2xl bg-white hover:bg-stone-50 border border-rose-200 text-stone-700 font-bold text-sm flex items-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
+          className="px-4 sm:px-5 py-3 rounded-2xl bg-white hover:bg-stone-50 border border-rose-200 text-stone-700 font-bold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-sm active:scale-95 transition-all cursor-pointer touch-manipulation shrink-0"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Back</span>
         </button>
 
@@ -179,20 +179,20 @@ export const FoodStep: React.FC<FoodStepProps> = ({
             sound.playCelebration();
             onNext();
           }}
-          className={`px-8 py-3.5 rounded-2xl font-bold text-base flex items-center gap-2 transition-all shadow-lg cursor-pointer ${
+          className={`flex-1 sm:flex-initial px-4 sm:px-8 py-3 sm:py-3.5 rounded-2xl font-bold text-xs sm:text-base flex items-center justify-center gap-1.5 sm:gap-2 transition-all shadow-lg cursor-pointer touch-manipulation ${
             hasSelection
-              ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-rose-500/25 hover:shadow-rose-500/40 hover:scale-[1.02] active:scale-95'
+              ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-rose-500/25 hover:shadow-rose-500/40 hover:scale-[1.01] active:scale-95'
               : 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none'
           }`}
         >
-          <Heart className="w-4 h-4 fill-white" />
-          <span>Lock In Our Date! ❤️</span>
-          <ArrowRight className="w-4 h-4" />
+          <Heart className="w-4 h-4 fill-white shrink-0" />
+          <span className="truncate">Lock In Our Date! ❤️</span>
+          <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
         </button>
       </div>
 
       {!hasSelection && (
-        <p className="text-center text-xs text-stone-400 mt-3">
+        <p className="text-center text-[11px] sm:text-xs text-stone-400 mt-2.5">
           Select at least 1 food option to finalize the date 🍕
         </p>
       )}

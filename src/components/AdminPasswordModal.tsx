@@ -101,9 +101,9 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fadeIn select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-md animate-fadeIn select-none">
       <div
-        className={`relative max-w-sm w-full bg-white/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-7 shadow-2xl border-2 border-rose-300 text-center transition-all ${
+        className={`relative max-w-[92vw] sm:max-w-sm w-full bg-white/95 backdrop-blur-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border-2 border-rose-300 text-center transition-all ${
           isShaking ? 'animate-head-shake border-red-400' : ''
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -114,20 +114,20 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
             sound.playPop();
             onClose();
           }}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-100 hover:bg-rose-100 text-stone-500 hover:text-rose-600 flex items-center justify-center transition-all cursor-pointer shadow-xs"
+          className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 w-8 h-8 rounded-full bg-stone-100 hover:bg-rose-100 text-stone-500 hover:text-rose-600 flex items-center justify-center transition-all cursor-pointer shadow-xs touch-manipulation"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Lock Icon */}
-        <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4 border border-rose-200 shadow-inner">
-          <Lock className="w-7 h-7 stroke-[2.2]" />
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-rose-200 shadow-inner">
+          <Lock className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.2]" />
         </div>
 
-        <h3 className="text-xl font-serif-romantic font-bold text-rose-950 mb-1">
+        <h3 className="text-lg sm:text-xl font-serif-romantic font-bold text-rose-950 mb-1">
           Secret Admin Viewer
         </h3>
-        <p className="text-xs text-stone-600 mb-5">
+        <p className="text-[11px] sm:text-xs text-stone-600 mb-4 sm:mb-5">
           Enter Secret Passcode to view Jana&apos;s Date Ticket 🔐
         </p>
 

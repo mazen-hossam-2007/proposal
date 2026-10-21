@@ -451,54 +451,68 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
       <div 
-        className="relative max-w-4xl w-full bg-white rounded-3xl p-4 sm:p-7 shadow-2xl border-2 border-rose-300 max-h-[92vh] flex flex-col overflow-hidden animate-dramatic-zoom"
+        className="relative max-w-4xl w-full bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-2xl border-2 border-rose-300 max-h-[96vh] sm:max-h-[92vh] flex flex-col overflow-hidden animate-dramatic-zoom"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}
-        <div className="flex flex-wrap items-center justify-between border-b border-rose-100 pb-3 mb-4 gap-3 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white shadow-md shadow-rose-500/20">
-              <Lock className="w-5 h-5 stroke-[2.2]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-serif-romantic font-extrabold text-rose-950">
-                  Admin Proposal Dashboard
-                </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold tracking-wider flex items-center gap-1.5 border border-emerald-300 shadow-2xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  LIVE CLOUD SYNC
-                </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-rose-100 pb-3 mb-3 sm:mb-4 gap-2.5 sm:gap-3 shrink-0">
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white shadow-md shadow-rose-500/20 shrink-0">
+                <Lock className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
               </div>
-              <p className="text-xs text-stone-500">
-                Tracking all confirmed date choices &amp; resistance stats
-              </p>
+              <div>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h2 className="text-base sm:text-xl font-serif-romantic font-extrabold text-rose-950 truncate">
+                    Proposal Dashboard
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] sm:text-[10px] font-bold tracking-wider flex items-center gap-1 border border-emerald-300 shadow-2xs shrink-0">
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    LIVE SYNC
+                  </span>
+                </div>
+                <p className="text-[10px] sm:text-xs text-stone-500 hidden sm:block">
+                  Tracking all confirmed date choices &amp; resistance stats
+                </p>
+              </div>
             </div>
+
+            {/* Mobile-only Close Button */}
+            <button
+              onClick={() => {
+                sound.playPop();
+                onClose();
+              }}
+              className="sm:hidden p-1.5 rounded-xl bg-stone-100 hover:bg-rose-100 text-stone-600 hover:text-rose-600 transition-all cursor-pointer touch-manipulation"
+              title="Close dashboard"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none w-full sm:w-auto justify-between sm:justify-end">
             {/* Paste / Add Ticket Button */}
             <button
               onClick={() => {
                 sound.playPop();
                 setIsImportModalOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] sm:text-xs font-bold transition-all active:scale-95 cursor-pointer touch-manipulation shrink-0"
               title="Add proposal or paste ticket sent on WhatsApp"
             >
               <Plus className="w-3.5 h-3.5 text-rose-600" />
-              <span>Paste / Add Ticket</span>
+              <span>Add Ticket</span>
             </button>
 
             {/* Export CSV Button */}
             <button
               onClick={handleExportCsv}
               disabled={isExportingCsv || submissions.length === 0}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] sm:text-xs font-bold transition-all active:scale-95 cursor-pointer disabled:opacity-50 touch-manipulation shrink-0"
               title="Download all proposals as CSV"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{isExportingCsv ? 'Exporting...' : 'Export CSV'}</span>
+              <span>{isExportingCsv ? '...' : 'CSV'}</span>
             </button>
 
             {/* Refresh Button */}
@@ -508,10 +522,10 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
                 fetchSubmissions();
               }}
               disabled={isLoading}
-              className="p-2 rounded-xl bg-stone-100 hover:bg-rose-50 text-stone-600 hover:text-rose-600 transition-all cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-stone-100 hover:bg-rose-50 text-stone-600 hover:text-rose-600 transition-all cursor-pointer touch-manipulation shrink-0"
               title="Refresh submissions"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-rose-500' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLoading ? 'animate-spin text-rose-500' : ''}`} />
             </button>
 
             {/* Lock / Sign Out Button */}
@@ -529,20 +543,20 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
                   onClose();
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] sm:text-xs font-bold transition-all active:scale-95 cursor-pointer touch-manipulation shrink-0"
               title="Lock dashboard & log out"
             >
               <Lock className="w-3.5 h-3.5 text-rose-500" />
               <span>Lock</span>
             </button>
 
-            {/* Close Button */}
+            {/* Desktop Close Button */}
             <button
               onClick={() => {
                 sound.playPop();
                 onClose();
               }}
-              className="p-2 rounded-xl bg-stone-100 hover:bg-rose-100 text-stone-600 hover:text-rose-600 transition-all cursor-pointer"
+              className="hidden sm:flex p-2 rounded-xl bg-stone-100 hover:bg-rose-100 text-stone-600 hover:text-rose-600 transition-all cursor-pointer touch-manipulation shrink-0"
               title="Close dashboard"
             >
               <X className="w-4 h-4" />
@@ -621,7 +635,7 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
           </div>
 
           {/* Search, Filter & Sort Controls */}
-          <div className="bg-stone-50/80 border border-stone-200 rounded-2xl p-3 flex flex-col sm:flex-row gap-2.5 items-center justify-between">
+          <div className="bg-stone-50/80 border border-stone-200 rounded-2xl p-2.5 sm:p-3 flex flex-col sm:flex-row gap-2 sm:gap-2.5 items-stretch sm:items-center justify-between">
             {/* Search Input */}
             <div className="relative w-full sm:w-64">
               <input
@@ -629,22 +643,22 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
                 placeholder="Search destination, food, notes..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-stone-300 bg-white text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-400"
               />
-              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
 
             {/* Filters & Sorting */}
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
               {/* Status Filter */}
-              <div className="flex items-center gap-1 text-xs">
-                <Filter className="w-3.5 h-3.5 text-stone-400" />
+              <div className="flex-1 sm:flex-initial flex items-center gap-1 text-xs min-w-0">
+                <Filter className="w-3 h-3 text-stone-400 shrink-0" />
                 <select
                   value={statusFilter}
                   onChange={handleStatusFilterChange}
-                  className="px-2.5 py-1.5 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-rose-400 font-medium"
+                  className="w-full px-2 py-1.5 rounded-xl border border-stone-300 bg-white text-[11px] sm:text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-rose-400 font-medium truncate"
                 >
-                  <option value="All">All Statuses ({stats.totalAccepted})</option>
+                  <option value="All">All ({stats.totalAccepted})</option>
                   <option value="Confirmed">Confirmed ({stats.statusCounts.Confirmed})</option>
                   <option value="Planning">Planning ({stats.statusCounts.Planning})</option>
                   <option value="Completed">Completed ({stats.statusCounts.Completed})</option>
@@ -653,17 +667,17 @@ ${record.contactPhone ? `📞 Contact: ${record.contactPhone}` : ''}`;
               </div>
 
               {/* Sort By */}
-              <div className="flex items-center gap-1 text-xs">
-                <ArrowUpDown className="w-3.5 h-3.5 text-stone-400" />
+              <div className="flex-1 sm:flex-initial flex items-center gap-1 text-xs min-w-0">
+                <ArrowUpDown className="w-3 h-3 text-stone-400 shrink-0" />
                 <select
                   value={sortBy}
                   onChange={handleSortChange}
-                  className="px-2.5 py-1.5 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-rose-400 font-medium"
+                  className="w-full px-2 py-1.5 rounded-xl border border-stone-300 bg-white text-[11px] sm:text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-rose-400 font-medium truncate"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="rejections">Most Rejections</option>
-                  <option value="date">Date of Outing</option>
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="rejections">Rejections</option>
+                  <option value="date">Date</option>
                 </select>
               </div>
             </div>

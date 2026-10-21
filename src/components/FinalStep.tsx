@@ -85,126 +85,126 @@ Can't wait to see you, Mazen! 🥰✨`;
   };
 
   return (
-    <div className="relative z-10 max-w-xl w-full mx-auto p-4 sm:p-6 animate-fadeIn select-none">
+    <div className="relative z-10 max-w-xl w-full mx-auto p-3 sm:p-6 animate-fadeIn select-none">
       
       {/* Celebration Header */}
-      <div className="text-center mb-6">
-        <div className="relative inline-block mx-auto mb-3">
-          <div className="w-32 h-32 rounded-3xl overflow-hidden shadow-2xl border-4 border-rose-300 mx-auto bg-rose-50">
+      <div className="text-center mb-4 sm:mb-6">
+        <div className="relative inline-block mx-auto mb-2 sm:mb-3">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl overflow-hidden shadow-2xl border-4 border-rose-300 mx-auto bg-rose-50">
             <img
               src="/assets/happy-cat.gif"
               alt="Happy dancing cat celebrating"
               className="w-full h-full object-cover"
             />
           </div>
-          <span className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-lg border border-rose-200 text-2xl animate-bounce">
+          <span className="absolute -bottom-1.5 -right-1.5 bg-white rounded-full p-1 sm:p-2 shadow-lg border border-rose-200 text-lg sm:text-2xl animate-bounce">
             🎉
           </span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-serif-romantic font-extrabold text-rose-950 mb-1">
+        <h1 className="text-2xl sm:text-4xl font-serif-romantic font-extrabold text-rose-950 mb-1 leading-tight">
           IT&apos;S AN OFFICIAL DATE WITH JANA! ❤️
         </h1>
-        <p className="font-handwriting text-2xl text-rose-600 mb-3">
+        <p className="font-handwriting text-xl sm:text-2xl text-rose-600 mb-2 sm:mb-3">
           Best decision of the year, Jana! Here is our cute itinerary:
         </p>
 
         {/* Rejection Attempts Callout Banner */}
         {rejections > 0 ? (
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm font-bold shadow-xs">
-            <span className="text-base">😼</span>
-            <span>Jana tried to reject / avoid saying Yes <strong>{rejections} {rejections === 1 ? 'time' : 'times'}</strong> before giving up! 😂</span>
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] sm:text-sm font-bold shadow-2xs">
+            <span className="text-sm sm:text-base">😼</span>
+            <span>Jana tried to reject <strong>{rejections} {rejections === 1 ? 'time' : 'times'}</strong> before giving up! 😂</span>
           </div>
         ) : (
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] sm:text-sm font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-rose-500" />
             <span>Jana said YES on the very first try with zero hesitation! 🥰</span>
           </div>
         )}
 
         {/* Live Cloud Sync Confirmation */}
-        <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 mx-auto w-fit shadow-2xs">
+        <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px] sm:text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 mx-auto w-fit shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>Locked in &amp; synced to Mazen&apos;s cloud dashboard in real-time! 💖</span>
         </div>
       </div>
 
       {/* Romantic Golden Love Ticket Card */}
-      <div className="relative bg-white/90 backdrop-blur-xl border-2 border-rose-200 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-rose-200/50 mb-6 overflow-hidden">
+      <div className="relative bg-white/90 backdrop-blur-xl border-2 border-rose-200 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl shadow-rose-200/50 mb-4 sm:mb-6 overflow-hidden">
         {/* Ticket punch hole notches */}
-        <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#fdf8f5] border-r-2 border-rose-200"></div>
-        <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#fdf8f5] border-l-2 border-rose-200"></div>
+        <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#fdf8f5] border-r-2 border-rose-200"></div>
+        <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#fdf8f5] border-l-2 border-rose-200"></div>
 
         {/* Header Tag */}
-        <div className="flex items-center justify-between border-b border-rose-100 pb-4 mb-5">
-          <div className="flex items-center gap-2">
-            <Heart className="w-5 h-5 fill-rose-500 text-rose-500" />
-            <span className="font-serif-romantic font-bold text-rose-900 tracking-wide text-sm">
+        <div className="flex items-center justify-between border-b border-rose-100 pb-3 mb-4 sm:pb-4 sm:mb-5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Heart className="w-4 h-4 sm:w-5 sm:h-5 fill-rose-500 text-rose-500 shrink-0" />
+            <span className="font-serif-romantic font-bold text-rose-900 tracking-wide text-xs sm:text-sm">
               DATE NIGHT PASS • JANA &amp; MAZEN
             </span>
           </div>
-          <span className="px-3 py-1 rounded-full bg-rose-100/80 text-rose-700 text-xs font-bold uppercase tracking-wider">
+          <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-rose-100/80 text-rose-700 text-[10px] sm:text-xs font-bold uppercase tracking-wider shrink-0">
             Confirmed 🎟️
           </span>
         </div>
 
         {/* Details Grid */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Rejection Attempts Line inside ticket */}
-          <div className="flex items-start gap-3.5">
-            <div className="p-2.5 rounded-2xl bg-rose-100/70 text-rose-600 border border-rose-200">
-              <ShieldAlert className="w-5 h-5" />
+          <div className="flex items-start gap-2.5 sm:gap-3.5">
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-rose-100/70 text-rose-600 border border-rose-200 shrink-0">
+              <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Rejections / Dodges</p>
-              <p className="text-base font-bold text-stone-900">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-stone-400">Rejections / Dodges</p>
+              <p className="text-sm sm:text-base font-bold text-stone-900">
                 {rejections > 0 
                   ? `${rejections} ${rejections === 1 ? 'Attempt' : 'Attempts'} (Resistance was futile! 😼)` 
                   : '0 Attempts (Immediate YES! 🥰)'}
               </p>
-              <p className="text-xs text-rose-600 font-semibold">
+              <p className="text-[11px] sm:text-xs text-rose-600 font-semibold">
                 {rejections > 0 ? 'The staring cat won in the end!' : 'Zero hesitation, true love!'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3.5">
-            <div className="p-2.5 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100">
-              <Calendar className="w-5 h-5" />
+          <div className="flex items-start gap-2.5 sm:gap-3.5">
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 shrink-0">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Date &amp; Time</p>
-              <p className="text-base font-bold text-stone-900">{state.date || 'TBD'}</p>
-              <p className="text-xs text-rose-600 font-semibold">{formattedTime}</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-stone-400">Date &amp; Time</p>
+              <p className="text-sm sm:text-base font-bold text-stone-900">{state.date || 'TBD'}</p>
+              <p className="text-[11px] sm:text-xs text-rose-600 font-semibold">{formattedTime}</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3.5">
-            <div className="p-2.5 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-              <MapPin className="w-5 h-5" />
+          <div className="flex items-start gap-2.5 sm:gap-3.5">
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 shrink-0">
+              <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Destination</p>
-              <p className="text-base font-bold text-stone-900">{placesList}</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-stone-400">Destination</p>
+              <p className="text-sm sm:text-base font-bold text-stone-900">{placesList}</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3.5">
-            <div className="p-2.5 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
-              <Utensils className="w-5 h-5" />
+          <div className="flex items-start gap-2.5 sm:gap-3.5">
+            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 shrink-0">
+              <Utensils className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Food &amp; Treats</p>
-              <p className="text-base font-bold text-stone-900">{foodList}</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-stone-400">Food &amp; Treats</p>
+              <p className="text-sm sm:text-base font-bold text-stone-900">{foodList}</p>
             </div>
           </div>
 
           {state.specialNote && (
-            <div className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-200/80">
-              <p className="text-xs font-bold uppercase tracking-wider text-rose-700 mb-1">
+            <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-rose-50/70 border border-rose-200/80">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-rose-700 mb-0.5">
                 💌 Special Craving / Note:
               </p>
-              <p className="text-sm font-medium text-stone-800 italic">
+              <p className="text-xs sm:text-sm font-medium text-stone-800 italic">
                 &ldquo;{state.specialNote}&rdquo;
               </p>
             </div>
@@ -213,29 +213,29 @@ Can't wait to see you, Mazen! 🥰✨`;
       </div>
 
       {/* Action Buttons: WhatsApp & Copy */}
-      <div className="space-y-3">
+      <div className="space-y-2.5 sm:space-y-3">
         {/* WhatsApp Send Button */}
         <button
           onClick={handleWhatsAppSend}
-          className="w-full py-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] active:scale-98 text-white font-bold text-base shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+          className="w-full py-3.5 sm:py-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] active:scale-98 text-white font-bold text-sm sm:text-base shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer touch-manipulation"
         >
-          <MessageCircle className="w-5 h-5 fill-white" />
+          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 fill-white shrink-0" />
           <span>Send Plan to WhatsApp 💬</span>
         </button>
 
         {/* Copy Text Button */}
         <button
           onClick={handleCopy}
-          className="w-full py-3.5 rounded-2xl bg-white hover:bg-stone-50 border border-rose-200 text-stone-700 font-bold text-sm flex items-center justify-center gap-2 shadow-sm active:scale-98 transition-all cursor-pointer"
+          className="w-full py-3 sm:py-3.5 rounded-2xl bg-white hover:bg-stone-50 border border-rose-200 text-stone-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm active:scale-98 transition-all cursor-pointer touch-manipulation"
         >
           {copied ? (
             <>
-              <Check className="w-4 h-4 text-emerald-600" />
+              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
               <span className="text-emerald-700">Copied to Clipboard! 🎉</span>
             </>
           ) : (
             <>
-              <Copy className="w-4 h-4 text-stone-500" />
+              <Copy className="w-4 h-4 text-stone-500 shrink-0" />
               <span>Copy Date Itinerary Text</span>
             </>
           )}

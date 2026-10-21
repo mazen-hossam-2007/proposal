@@ -218,15 +218,16 @@ export default function App() {
       />
 
       {/* Delicate Footer with Secret Trigger on the Heart */}
-      <footer className="relative z-10 py-3 text-center text-xs text-rose-900/40 select-none">
+      <footer className="relative z-10 py-3 text-center text-xs text-rose-900/40 select-none pb-safe">
         <span>Crafted with love for Jana &amp; cute cats </span>
-        <span
+        <button
           onClick={handleSecretHeartClick}
-          className="cursor-default inline-block hover:scale-125 transition-transform"
+          className="cursor-pointer inline-block p-2 -m-2 hover:scale-125 transition-transform touch-manipulation bg-transparent border-none text-xs"
           title="💕"
+          aria-label="Secret admin viewer trigger"
         >
           💕
-        </span>
+        </button>
       </footer>
     </div>
   );

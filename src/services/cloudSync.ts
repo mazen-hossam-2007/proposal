@@ -346,6 +346,9 @@ export function subscribeToLiveProposals(
 
   try {
     eventSource = new EventSource(`${NTFY_BASE_URL}/${CLOUD_CHANNEL}/sse`);
+    eventSource.onerror = () => {
+      // Benign SSE disconnect or reconnect event, handled by interval fallback
+    };
     eventSource.onmessage = async (e) => {
       try {
         const data = JSON.parse(e.data);
