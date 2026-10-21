@@ -16,6 +16,13 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
   // Admin secret viewer states
+  const [adminToken, setAdminToken] = useState<string>(() => {
+    try {
+      return localStorage.getItem(ADMIN_CONFIG.tokenStorageKey) || '';
+    } catch {
+      return '';
+    }
+  });
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState<boolean>(false);
 
@@ -40,7 +47,13 @@ export default function App() {
       const hash = window.location.hash;
       const searchParams = new URLSearchParams(window.location.search);
       if (hash === ADMIN_CONFIG.secretHash || searchParams.get(ADMIN_CONFIG.secretQueryParam) === 'true') {
-        setIsPasswordModalOpen(true);
+        const storedToken = localStorage.getItem(ADMIN_CONFIG.tokenStorageKey);
+        if (storedToken) {
+          setAdminToken(storedToken);
+          setIsAdminDashboardOpen(true);
+        } else {
+          setIsPasswordModalOpen(true);
+        }
       }
     };
 
@@ -59,7 +72,13 @@ export default function App() {
     if (secretClickCountRef.current >= 3) {
       sound.playPop();
       secretClickCountRef.current = 0;
-      setIsPasswordModalOpen(true);
+      const storedToken = localStorage.getItem(ADMIN_CONFIG.tokenStorageKey);
+      if (storedToken) {
+        setAdminToken(storedToken);
+        setIsAdminDashboardOpen(true);
+      } else {
+        setIsPasswordModalOpen(true);
+      }
     } else {
       secretClickTimerRef.current = setTimeout(() => {
         secretClickCountRef.current = 0;
@@ -196,7 +215,8 @@ export default function App() {
       <AdminPasswordModal
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
-        onSuccess={() => {
+        onSuccess={(token: string) => {
+          setAdminToken(token);
           setIsPasswordModalOpen(false);
           setIsAdminDashboardOpen(true);
         }}
@@ -205,6 +225,7 @@ export default function App() {
       {/* Private Admin Dashboard View */}
       <AdminDashboardModal
         isOpen={isAdminDashboardOpen}
+        adminToken={adminToken}
         onClose={() => setIsAdminDashboardOpen(false)}
       />
 

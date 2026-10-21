@@ -2,13 +2,13 @@
 // SECRET PASSWORD-PROTECTED ADMIN CONFIGURATION:
 // ============================================================
 export const ADMIN_CONFIG = {
-  // Secret passcode to unlock Jana's confirmed answers
-  adminPassword: "love123",
+  // Session token storage key
+  tokenStorageKey: "admin_auth_token",
 
-  // Storage key for local device backup
+  // Local storage key for offline client backup
   storageKey: "jana_confirmed_date_ticket",
 
-  // URL triggers
+  // Secret URL triggers
   secretHash: "#admin",
   secretQueryParam: "admin",
 };

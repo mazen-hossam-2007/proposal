@@ -1,67 +1,504 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { createServer as createViteServer } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 
 const DATA_DIR = path.resolve(__dirname, 'data');
 const DATA_FILE = path.resolve(DATA_DIR, 'submissions.json');
+const BACKUP_FILE = path.resolve(DATA_DIR, 'submissions.backup.json');
 
 // Ensure data storage directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// API: Save Jana's confirmed date submission
-app.post('/api/submissions', (req, res) => {
-  try {
-    const submission = {
-      ...req.body,
-      id: Date.now().toString(),
-      submittedAt: new Date().toISOString(),
-    };
+// Ensure database file exists
+if (!fs.existsSync(DATA_FILE)) {
+  fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
+}
 
-    let list = [];
-    if (fs.existsSync(DATA_FILE)) {
+// ---------------------------------------------------------------------------
+// Security & Authentication Setup
+// ---------------------------------------------------------------------------
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'love123';
+
+interface AdminSession {
+  token: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
+// Active in-memory session tokens with 24-hour expiration
+const activeSessions = new Map<string, AdminSession>();
+const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+// Cleanup expired sessions every 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, session] of activeSessions.entries()) {
+    if (session.expiresAt <= now) {
+      activeSessions.delete(token);
+    }
+  }
+}, 30 * 60 * 1000);
+
+// Timing-safe password comparison
+function verifyPassword(input: string): boolean {
+  if (typeof input !== 'string') return false;
+  const inputBuffer = Buffer.from(input, 'utf-8');
+  const expectedBuffer = Buffer.from(ADMIN_PASSWORD, 'utf-8');
+  if (inputBuffer.length !== expectedBuffer.length) {
+    // Constant time check against itself to avoid timing leak on length
+    crypto.timingSafeEqual(inputBuffer, inputBuffer);
+    return false;
+  }
+  return crypto.timingSafeEqual(inputBuffer, expectedBuffer);
+}
+
+// Admin Authentication Middleware
+function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      error: 'Unauthorized: Missing or invalid authorization token.',
+    });
+  }
+
+  const token = authHeader.substring(7).trim();
+  const session = activeSessions.get(token);
+
+  if (!session || session.expiresAt <= Date.now()) {
+    if (session) activeSessions.delete(token);
+    return res.status(401).json({
+      error: 'Unauthorized: Session expired or invalid. Please log in again.',
+    });
+  }
+
+  // Session valid
+  next();
+}
+
+// ---------------------------------------------------------------------------
+// Database Helper Functions
+// ---------------------------------------------------------------------------
+export interface SubmissionRecord {
+  id: string;
+  partnerName: string;
+  contactPhone?: string;
+  hasSaidYes: boolean;
+  rejectionAttempts: number;
+  date: string;
+  timeSlot: string;
+  customTime: string;
+  locations: string[];
+  foodCravings: string[];
+  specialNote: string;
+  status: 'Confirmed' | 'Planning' | 'Completed' | 'Archived';
+  submittedAt: string;
+  updatedAt?: string;
+  internalAdminNotes?: string;
+}
+
+function readSubmissions(): SubmissionRecord[] {
+  try {
+    if (!fs.existsSync(DATA_FILE)) return [];
+    const content = fs.readFileSync(DATA_FILE, 'utf-8');
+    const parsed = JSON.parse(content);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error('Error reading submissions from disk:', err);
+    // Attempt recovery from backup
+    if (fs.existsSync(BACKUP_FILE)) {
       try {
-        const fileContent = fs.readFileSync(DATA_FILE, 'utf-8');
-        list = JSON.parse(fileContent);
+        const backupContent = fs.readFileSync(BACKUP_FILE, 'utf-8');
+        return JSON.parse(backupContent);
       } catch {
-        list = [];
+        return [];
       }
     }
+    return [];
+  }
+}
 
-    list.unshift(submission);
-    fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), 'utf-8');
-    res.json({ success: true, submission, count: list.length });
+function writeSubmissions(records: SubmissionRecord[]): void {
+  try {
+    const serialized = JSON.stringify(records, null, 2);
+    // Write backup first
+    if (fs.existsSync(DATA_FILE)) {
+      fs.copyFileSync(DATA_FILE, BACKUP_FILE);
+    }
+    fs.writeFileSync(DATA_FILE, serialized, 'utf-8');
+  } catch (err) {
+    console.error('Failed to write submissions:', err);
+    throw new Error('Database write operation failed.');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Public API Endpoints
+// ---------------------------------------------------------------------------
+
+// Public endpoint: Jana submits her date acceptance
+app.post('/api/submissions', (req: Request, res: Response) => {
+  try {
+    const body = req.body;
+    if (!body || typeof body !== 'object') {
+      return res.status(400).json({ error: 'Invalid submission payload' });
+    }
+
+    const currentRecords = readSubmissions();
+    const nowIso = new Date().toISOString();
+
+    // Deduplication check: check if a submission with the same choices was submitted within the last 45 seconds
+    const recentDuplicate = currentRecords.find((rec) => {
+      const timeDiff = Math.abs(new Date(nowIso).getTime() - new Date(rec.submittedAt).getTime());
+      return (
+        timeDiff < 45000 &&
+        rec.date === body.date &&
+        rec.timeSlot === body.timeSlot &&
+        rec.customTime === (body.customTime || '') &&
+        rec.specialNote === (body.specialNote || '')
+      );
+    });
+
+    if (recentDuplicate) {
+      // Update the existing submission instead of creating duplicate spam
+      recentDuplicate.locations = Array.isArray(body.locations) ? body.locations : recentDuplicate.locations;
+      recentDuplicate.foodCravings = Array.isArray(body.foodCravings) ? body.foodCravings : recentDuplicate.foodCravings;
+      recentDuplicate.rejectionAttempts = Math.max(recentDuplicate.rejectionAttempts, body.rejectionAttempts || 0);
+      recentDuplicate.updatedAt = nowIso;
+      writeSubmissions(currentRecords);
+      return res.json({
+        success: true,
+        submission: recentDuplicate,
+        deduplicated: true,
+        count: currentRecords.length,
+      });
+    }
+
+    // Create new submission record
+    const newSubmission: SubmissionRecord = {
+      id: `prop_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      partnerName: body.partnerName || 'Jana',
+      contactPhone: body.contactPhone || '',
+      hasSaidYes: true,
+      rejectionAttempts: Number(body.rejectionAttempts) || 0,
+      date: body.date || '',
+      timeSlot: body.timeSlot || '',
+      customTime: body.customTime || '',
+      locations: Array.isArray(body.locations) ? body.locations : [],
+      foodCravings: Array.isArray(body.foodCravings) ? body.foodCravings : [],
+      specialNote: body.specialNote || '',
+      status: 'Confirmed',
+      submittedAt: nowIso,
+    };
+
+    currentRecords.unshift(newSubmission);
+    writeSubmissions(currentRecords);
+
+    return res.status(201).json({
+      success: true,
+      submission: newSubmission,
+      count: currentRecords.length,
+    });
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    res.status(500).json({ error: errorMessage });
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    return res.status(500).json({ error: message });
   }
 });
 
-// API: Retrieve confirmed submissions for Admin Viewer
-app.get('/api/submissions', (req, res) => {
+// ---------------------------------------------------------------------------
+// Protected Admin API Endpoints
+// ---------------------------------------------------------------------------
+
+// Admin Login
+app.post('/api/admin/login', (req: Request, res: Response) => {
   try {
-    let list = [];
-    if (fs.existsSync(DATA_FILE)) {
-      const fileContent = fs.readFileSync(DATA_FILE, 'utf-8');
-      list = JSON.parse(fileContent);
+    const { password } = req.body || {};
+    if (!password || !verifyPassword(password)) {
+      return res.status(401).json({
+        error: "Wrong password, you're not the boyfriend! 😜",
+      });
     }
+
+    // Generate secure session token
+    const token = crypto.randomBytes(32).toString('hex');
+    const now = Date.now();
+    const expiresAt = now + SESSION_DURATION_MS;
+
+    activeSessions.set(token, {
+      token,
+      createdAt: now,
+      expiresAt,
+    });
+
+    return res.json({
+      success: true,
+      token,
+      expiresAt,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Authentication error';
+    return res.status(500).json({ error: message });
+  }
+});
+
+// Admin Logout
+app.post('/api/admin/logout', requireAdminAuth, (req: Request, res: Response) => {
+  const token = req.headers.authorization!.substring(7).trim();
+  activeSessions.delete(token);
+  return res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Admin Session Check
+app.get('/api/admin/session', requireAdminAuth, (_req: Request, res: Response) => {
+  return res.json({ success: true, authenticated: true });
+});
+
+// Admin: Get all submissions with search, filter, sort & pagination
+app.get('/api/admin/submissions', requireAdminAuth, (req: Request, res: Response) => {
+  try {
+    const {
+      search = '',
+      status = 'All',
+      sort = 'newest',
+      page = '1',
+      limit = '10',
+    } = req.query;
+
+    const allRecords = readSubmissions();
+
+    // Compute Overall Statistics
+    const totalAccepted = allRecords.length;
+    const statusCounts = {
+      Confirmed: allRecords.filter((r) => r.status === 'Confirmed').length,
+      Planning: allRecords.filter((r) => r.status === 'Planning').length,
+      Completed: allRecords.filter((r) => r.status === 'Completed').length,
+      Archived: allRecords.filter((r) => r.status === 'Archived').length,
+    };
+    const totalRejectionsPrevented = allRecords.reduce(
+      (sum, r) => sum + (r.rejectionAttempts || 0),
+      0
+    );
+    const latestSubmission = allRecords[0]?.submittedAt || null;
+
+    // Filter by search keyword
+    const searchQuery = String(search).trim().toLowerCase();
+    let filtered = allRecords;
+
+    if (searchQuery) {
+      filtered = filtered.filter((r) => {
+        const nameMatch = r.partnerName?.toLowerCase().includes(searchQuery);
+        const dateMatch = r.date?.toLowerCase().includes(searchQuery);
+        const timeMatch = (r.customTime || r.timeSlot || '').toLowerCase().includes(searchQuery);
+        const locMatch = r.locations?.some((loc) => loc.toLowerCase().includes(searchQuery));
+        const foodMatch = r.foodCravings?.some((f) => f.toLowerCase().includes(searchQuery));
+        const noteMatch = r.specialNote?.toLowerCase().includes(searchQuery);
+        const phoneMatch = r.contactPhone?.toLowerCase().includes(searchQuery);
+        const statusMatch = r.status?.toLowerCase().includes(searchQuery);
+        return nameMatch || dateMatch || timeMatch || locMatch || foodMatch || noteMatch || phoneMatch || statusMatch;
+      });
+    }
+
+    // Filter by status
+    if (status && status !== 'All') {
+      filtered = filtered.filter((r) => r.status === status);
+    }
+
+    // Sort
+    const sortKey = String(sort);
+    filtered.sort((a, b) => {
+      if (sortKey === 'oldest') {
+        return new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime();
+      }
+      if (sortKey === 'rejections') {
+        return (b.rejectionAttempts || 0) - (a.rejectionAttempts || 0);
+      }
+      if (sortKey === 'date') {
+        return (a.date || '').localeCompare(b.date || '');
+      }
+      // default: 'newest'
+      return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+    });
+
+    // Pagination
+    const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
+    const limitNum = Math.max(1, parseInt(String(limit), 10) || 10);
+    const totalCount = filtered.length;
+    const totalPages = Math.ceil(totalCount / limitNum) || 1;
+    const startIndex = (pageNum - 1) * limitNum;
+    const paginatedItems = filtered.slice(startIndex, startIndex + limitNum);
+
+    return res.json({
+      success: true,
+      submissions: paginatedItems,
+      totalCount,
+      page: pageNum,
+      limit: limitNum,
+      totalPages,
+      stats: {
+        totalAccepted,
+        statusCounts,
+        totalRejectionsPrevented,
+        latestSubmission,
+      },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to query submissions';
+    return res.status(500).json({ error: message });
+  }
+});
+
+// Admin: Get single submission details
+app.get('/api/admin/submissions/:id', requireAdminAuth, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const allRecords = readSubmissions();
+    const record = allRecords.find((r) => r.id === id);
+    if (!record) {
+      return res.status(404).json({ error: 'Proposal record not found' });
+    }
+    return res.json({ success: true, submission: record });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error retrieving record';
+    return res.status(500).json({ error: message });
+  }
+});
+
+// Admin: Update proposal status and contact details
+app.patch('/api/admin/submissions/:id', requireAdminAuth, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status, contactPhone, internalAdminNotes, partnerName } = req.body || {};
+
+    const allRecords = readSubmissions();
+    const index = allRecords.findIndex((r) => r.id === id);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Proposal record not found' });
+    }
+
+    const current = allRecords[index];
+    if (status && ['Confirmed', 'Planning', 'Completed', 'Archived'].includes(status)) {
+      current.status = status;
+    }
+    if (contactPhone !== undefined) {
+      current.contactPhone = String(contactPhone);
+    }
+    if (internalAdminNotes !== undefined) {
+      current.internalAdminNotes = String(internalAdminNotes);
+    }
+    if (partnerName !== undefined && partnerName.trim()) {
+      current.partnerName = String(partnerName).trim();
+    }
+
+    current.updatedAt = new Date().toISOString();
+    writeSubmissions(allRecords);
+
+    return res.json({ success: true, submission: current });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Update failed';
+    return res.status(500).json({ error: message });
+  }
+});
+
+// Admin: Delete a proposal record
+app.delete('/api/admin/submissions/:id', requireAdminAuth, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const allRecords = readSubmissions();
+    const initialLen = allRecords.length;
+    const updated = allRecords.filter((r) => r.id !== id);
+
+    if (updated.length === initialLen) {
+      return res.status(404).json({ error: 'Proposal record not found' });
+    }
+
+    writeSubmissions(updated);
+    return res.json({ success: true, remainingCount: updated.length });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Deletion failed';
+    return res.status(500).json({ error: message });
+  }
+});
+
+// Admin: Export all acceptance records to CSV
+app.get('/api/admin/export-csv', requireAdminAuth, (_req: Request, res: Response) => {
+  try {
+    const records = readSubmissions();
+
+    // Helper to escape CSV values
+    const escapeCsv = (val: unknown): string => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const headers = [
+      'ID',
+      'Partner Name',
+      'Status',
+      'Submission Timestamp',
+      'Proposed Date',
+      'Time Slot',
+      'Custom Time',
+      'Destinations',
+      'Food Cravings',
+      'Personal Notes',
+      'Rejection Dodges Avoided',
+      'Contact Phone',
+      'Admin Notes',
+    ];
+
+    const rows = records.map((r) => [
+      escapeCsv(r.id),
+      escapeCsv(r.partnerName || 'Jana'),
+      escapeCsv(r.status || 'Confirmed'),
+      escapeCsv(r.submittedAt),
+      escapeCsv(r.date || 'TBD'),
+      escapeCsv(r.timeSlot || ''),
+      escapeCsv(r.customTime || ''),
+      escapeCsv((r.locations || []).join(', ')),
+      escapeCsv((r.foodCravings || []).join(', ')),
+      escapeCsv(r.specialNote || ''),
+      escapeCsv(r.rejectionAttempts || 0),
+      escapeCsv(r.contactPhone || ''),
+      escapeCsv(r.internalAdminNotes || ''),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n') + '\n';
+    const filename = `date-acceptances-${new Date().toISOString().split('T')[0]}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(csvContent);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'CSV export failed';
+    return res.status(500).json({ error: message });
+  }
+});
+
+// Protect legacy unauthenticated endpoint: require admin auth
+app.get('/api/submissions', requireAdminAuth, (_req: Request, res: Response) => {
+  try {
+    const list = readSubmissions();
     res.json({ success: true, submissions: list });
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    res.status(500).json({ error: errorMessage });
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    res.status(500).json({ error: message });
   }
 });
 
-// Setup Vite dev server middleware
+// ---------------------------------------------------------------------------
+// Setup Vite & Static Assets
+// ---------------------------------------------------------------------------
 const isProd = process.env.NODE_ENV === 'production';
 const PORT = 3000;
 
@@ -80,7 +517,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Application running at http://0.0.0.0:${PORT}`);
+    console.log(`Date Proposal Application running securely at http://0.0.0.0:${PORT}`);
   });
 }
 

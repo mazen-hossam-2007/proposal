@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Lock, KeyRound, X, AlertCircle } from 'lucide-react';
+import { Lock, KeyRound, X, AlertCircle, Loader2 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { ADMIN_CONFIG } from '../adminConfig';
 
 interface AdminPasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (token: string) => void;
 }
 
 export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
@@ -17,20 +17,52 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isShaking, setIsShaking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.trim() === ADMIN_CONFIG.adminPassword) {
-      sound.playCelebration();
-      setErrorMessage('');
-      setPassword('');
-      onSuccess();
-    } else {
+    if (!password.trim()) {
+      setErrorMessage('Please enter the secret password.');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: password.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success && data.token) {
+        sound.playCelebration();
+        // Save authenticated admin token securely in localStorage
+        try {
+          localStorage.setItem(ADMIN_CONFIG.tokenStorageKey, data.token);
+        } catch {
+          // Ignore storage quota
+        }
+        setPassword('');
+        setIsLoading(false);
+        onSuccess(data.token);
+      } else {
+        sound.playDramaticStare();
+        setErrorMessage(data.error || "Wrong password, you're not the boyfriend! 😜");
+        setIsShaking(true);
+        setIsLoading(false);
+        setTimeout(() => setIsShaking(false), 500);
+      }
+    } catch {
       sound.playDramaticStare();
-      setErrorMessage("Wrong password, you're not the boyfriend! 😜");
+      setErrorMessage('Connection error. Could not verify password with server.');
       setIsShaking(true);
+      setIsLoading(false);
       setTimeout(() => setIsShaking(false), 500);
     }
   };
@@ -71,13 +103,14 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
             <input
               type="password"
               autoFocus
+              disabled={isLoading}
               placeholder="Enter secret passcode..."
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              className="w-full pl-10 pr-4 py-3 rounded-2xl border border-rose-200 bg-white text-stone-800 placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 shadow-xs"
+              className="w-full pl-10 pr-4 py-3 rounded-2xl border border-rose-200 bg-white text-stone-800 placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 shadow-xs disabled:opacity-60"
             />
             <KeyRound className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           </div>
@@ -91,9 +124,17 @@ export const AdminPasswordModal: React.FC<AdminPasswordModalProps> = ({
 
           <button
             type="submit"
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm shadow-md shadow-rose-500/25 transition-all active:scale-95 cursor-pointer"
+            disabled={isLoading}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm shadow-md shadow-rose-500/25 transition-all active:scale-95 cursor-pointer disabled:opacity-75 flex items-center justify-center gap-2"
           >
-            Unlock Dashboard 🔓
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Verifying Secret...</span>
+              </>
+            ) : (
+              <span>Unlock Dashboard 🔓</span>
+            )}
           </button>
         </form>
 

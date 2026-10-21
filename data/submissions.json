@@ -1,1 +1,25 @@
-[]
+[
+  {
+    "id": "prop_1792616463197_d4a6v",
+    "partnerName": "Jana",
+    "contactPhone": "+201234567890",
+    "hasSaidYes": true,
+    "rejectionAttempts": 4,
+    "date": "2025-02-14",
+    "timeSlot": "Evening (6:00 PM - 9:00 PM)",
+    "customTime": "7:30 PM",
+    "locations": [
+      "Zamalek 🌳✨",
+      "Maadi Cozy Cafe ☕🪴"
+    ],
+    "foodCravings": [
+      "Italian Cuisine 🍕🍝",
+      "Cheesecake / Pastries 🍰☕"
+    ],
+    "specialNote": "Can we bring a camera for photos? 🥰",
+    "status": "Planning",
+    "submittedAt": "2026-10-21T21:01:03.197Z",
+    "updatedAt": "2026-10-21T21:01:14.364Z",
+    "internalAdminNotes": "Reserved table for two with candlelight & bouquet of roses."
+  }
+]

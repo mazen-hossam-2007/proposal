@@ -26,7 +26,25 @@ export interface FoodOption {
   category: string;
 }
 
+export type ProposalStatus = 'Confirmed' | 'Planning' | 'Completed' | 'Archived';
+
 export interface DateSubmissionRecord extends DateProposalState {
   id: string;
   submittedAt: string;
+  status: ProposalStatus;
+  partnerName?: string;
+  contactPhone?: string;
+  internalAdminNotes?: string;
+}
+
+export interface AdminStats {
+  totalAccepted: number;
+  statusCounts: {
+    Confirmed: number;
+    Planning: number;
+    Completed: number;
+    Archived: number;
+  };
+  totalRejectionsPrevented: number;
+  latestSubmission: string | null;
 }
